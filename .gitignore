@@ -1,0 +1,6 @@
+/prj/*.bak
+/prj/db
+/adcs.HWORKS.Hoki.pui
+/prj/incremental_db
+/prj/output_files
+/prj/greybox_tmp/cbx_args.txt

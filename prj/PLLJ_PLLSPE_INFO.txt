@@ -1,0 +1,5 @@
+PLL_Name	usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|pll1
+PLLJITTER	32
+PLLSPEmax	84
+PLLSPEmin	-53
+
