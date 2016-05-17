@@ -96,7 +96,8 @@ module top
    ////////////////// Clock Generation
 
    // USB Clocks
-   wire ad_clk;
+	wire   ifclk ;  // 48MHz
+   wire   ad_clk;  // 50MHz
    usb_pll	usb_pll_u(
    	.inclk0 (CLK1      ),
    	.c0     (USB_XTALIN),
@@ -104,7 +105,6 @@ module top
    	.c2     (ad_clk)
 	);
 
-	wire   ifclk; // 48MHz
 	assign ifclk = ~USB_IFCLK;
 
    ////////////////// AD7606 controller
