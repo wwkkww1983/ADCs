@@ -37,9 +37,39 @@
    `define BUFFER_ADDR_NBIT `USB_ADDR_NBIT
    `define BUFFER_DATA_NBIT `USB_DATA_NBIT
    
-   ////////////////// COMMUNICATION, BYTE INVERTED
-   `define MSG_STR_NBIT     `USB_DATA_NBIT
-   
    ////////////////// AD7606
    `define AD_DATA_NBIT     16
+   `define AD_CHN_NBIT      3                 // channel 
+   `define AD_CHN_NUM       8                 // channel number
+   `define AD_CHE_NBIT      9                 // cache buffer address width 
+   `define AD_CHE_NUM       `AD_CHE_NBIT'd507 // cache buffer data size
+   
+   ////////////////// COMMUNICATION, BYTE INVERTED
+   `define MSG_STR_NBIT        `USB_DATA_NBIT
+   `define MSG_DATA_MAX_NBIT   96
       
+   `define MSG_HEAD            `MSG_STR_NBIT'h5453  // "ST"
+   
+   `define MSG_TYPE_HANDSHAKE  `MSG_STR_NBIT'h3030  // "00"
+   `define MSG_TYPE_START      `MSG_STR_NBIT'h3130  // "01"
+   `define MSG_TYPE_STOP       `MSG_STR_NBIT'h3230  // "02"
+   
+   `define MSG_PASS            `MSG_STR_NBIT'h3530  // "05"
+   `define MSG_FAIL            `MSG_STR_NBIT'h3730  // "07"
+   
+   `define MSG_END_N           8'h0A  // "\n"
+   `define MSG_END_R           8'h0D  // "\r"
+   
+   `define MSG_FP_CODE_00      `MSG_STR_NBIT'h3030
+   
+   `define MSG_FP_CODE_01      `MSG_STR_NBIT'h3130
+   `define MSG_FP_CODE_02      `MSG_STR_NBIT'h3230
+   `define MSG_FP_CODE_03      `MSG_STR_NBIT'h3330
+   
+   `define MSG_FP_CODE_11      `MSG_STR_NBIT'h3131
+   `define MSG_FP_CODE_12      `MSG_STR_NBIT'h3231
+   `define MSG_FP_CODE_13      `MSG_STR_NBIT'h3331
+   
+   `define MSG_FP_CODE_21      `MSG_STR_NBIT'h3132
+   `define MSG_FP_CODE_22      `MSG_STR_NBIT'h3232
+   `define MSG_FP_CODE_23      `MSG_STR_NBIT'h3332   

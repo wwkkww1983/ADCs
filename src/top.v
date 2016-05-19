@@ -41,7 +41,7 @@ module top
    AD_RD,
    AD_RESET,
    AD_CONVSTAB,
-   // USB Interface
+   // USB
    USB_XTALIN,
    USB_FLAGB,
    USB_FLAGC,
@@ -55,7 +55,7 @@ module top
 );
 
    ////////////////// PORT ////////////////////
-   input                          CLK1;
+   input                          CLK1; // 48MHz
    output                         OE;
 
    output                         USB_XTALIN; // 24MHz
@@ -95,9 +95,8 @@ module top
 
    ////////////////// Clock Generation
 
-   // USB Clocks
-	wire   ifclk ;  // 48MHz
-   wire   ad_clk;  // 50MHz
+	wire   mclk;   // 48MHz
+   wire   ad_clk; // 50MHz
    usb_pll	usb_pll_u(
    	.inclk0 (CLK1      ),
    	.c0     (USB_XTALIN),
@@ -105,10 +104,10 @@ module top
    	.c2     (ad_clk)
 	);
 
-	assign ifclk = ~USB_IFCLK;
+	assign mclk = ~USB_IFCLK;
 
    ////////////////// AD7606 controller
-   wire [`AD_DATA_NBIT-1:0]   ad_ch_data;
+   wire [`AD_DATA_NBIT-1:0]   ad_ch_data[`AD_CHN_NUM-1:0];
    wire                       ad_ch_vd;
    
    ad7606 u_ad7606(
@@ -122,41 +121,45 @@ module top
       .ad_rd      (AD_RD        ),
       .ad_reset   (AD_RESET     ),
       .ad_convstab(AD_CONVSTAB  ),
-      .ad_ch1     (ad_ch_data   ),
-      .ad_ch2     (),
-      .ad_ch3     (),
-      .ad_ch4     (),
-      .ad_ch5     (),
-      .ad_ch6     (),
-      .ad_ch7     (),
-      .ad_ch8     (),
       .ad_vd      (ad_ch_vd     ),
+      .ad_ch1     (ad_ch_data[0]),
+      .ad_ch2     (ad_ch_data[1]),
+      .ad_ch3     (ad_ch_data[2]),
+      .ad_ch4     (ad_ch_data[3]),
+      .ad_ch5     (ad_ch_data[4]),
+      .ad_ch6     (ad_ch_data[5]),
+      .ad_ch7     (ad_ch_data[6]),
+      .ad_ch8     (ad_ch_data[7])
    );
+   
+   wire [`AD_DATA_NBIT-1:0]   ad_data;
+   wire                       ad_vd;
+   assign ad_data = ad_ch_data[ad_chn];
+   assign ad_vd   = ad_ch_vd;
 
    ////////////////// USB PHY Slave FIFO Controller
 
-   wire                         sloe;
-   wire                         slrd;
-   wire                         slwr;
-   wire                         pkend;
-   wire [`USB_FIFOADR_NBIT-1:0] fifoadr;
-   wire                         usb_wen;
-   wire [`USB_DATA_NBIT-1:0]    usb_wdata;
-   wire [`USB_DATA_NBIT-1:0]    usb_rdata;
-
-   assign USB_DB      = usb_wen ? usb_wdata : {`USB_DATA_NBIT{1'bZ}};
-   assign USB_SLOE    = ~sloe;
-   assign USB_SLRD    = ~slrd;
-   assign USB_SLWR    = ~slwr;
-   assign USB_PKEND   = ~pkend;
-   assign USB_FIFOADR = fifoadr;
-   assign usb_rdata   = USB_DB;
-
    // slave fifo control
-   wire   out_ep_empty;
-   wire   in_ep_full  ;
-   assign out_ep_empty = ~USB_FLAGB; // End Point 2 empty flag
-   assign in_ep_full   = ~USB_FLAGC; // End Point 6 full flag
+   wire                         usb_ctrl_sloe;
+   wire                         usb_ctrl_slrd;
+   wire                         usb_ctrl_slwr;
+   wire                         usb_ctrl_pkend;
+   wire [`USB_FIFOADR_NBIT-1:0] usb_ctrl_fifoadr;
+   wire                         usb_ctrl_wen;
+   wire [`USB_DATA_NBIT-1:0]    usb_ctrl_wdata;
+   wire [`USB_DATA_NBIT-1:0]    usb_ctrl_rdata;
+   wire                         usb_ctrl_empty;
+   wire                         usb_ctrl_full;
+
+   assign USB_DB         =  usb_ctrl_wen ? usb_ctrl_wdata : {`USB_DATA_NBIT{1'bZ}};
+   assign USB_SLOE       = ~usb_ctrl_sloe;
+   assign USB_SLRD       = ~usb_ctrl_slrd;
+   assign USB_SLWR       = ~usb_ctrl_slwr;
+   assign USB_PKEND      = ~usb_ctrl_pkend;
+   assign USB_FIFOADR    =  usb_ctrl_fifoadr;
+   assign usb_ctrl_rdata =  USB_DB;
+   assign usb_ctrl_empty = ~USB_FLAGB; // End Point 2 empty flag
+   assign usb_ctrl_full  = ~USB_FLAGC; // End Point 6 full flag
 
 
    // RX Data From USB PHY
@@ -170,24 +173,61 @@ module top
 
    usb_slavefifo u_usb_slavefifo
    (
-      .ifclk        (ifclk        ),
-      .sloe         (sloe         ),
-      .slrd         (slrd         ),
-      .f_empty      (out_ep_empty ),
-      .rdata        (usb_rdata    ),
-      .slwr         (slwr         ),
-      .wen          (usb_wen      ),
-      .wdata        (usb_wdata    ),
-      .f_full       (in_ep_full   ),
-      .pkend        (pkend        ),
-      .fifoaddr     (fifoadr      ),
-      .rx_cache_vd  (rx_cache_vd  ),
-      .rx_cache_data(rx_cache_data),
-      .rx_cache_sop (rx_cache_sop ),
-      .rx_cache_eop (rx_cache_eop ),
-      .tx_cache_sop (pktdec_tx_eop),
-      .tx_cache_addr(tx_cache_addr),
-      .tx_cache_data(tx_cache_data)
+      .ifclk        (mclk            ),
+      .sloe         (usb_ctrl_sloe   ),
+      .slrd         (usb_ctrl_slrd   ),
+      .f_empty      (usb_ctrl_empty  ),
+      .rdata        (usb_ctrl_rdata  ),
+      .slwr         (usb_ctrl_slwr   ),
+      .wen          (usb_ctrl_wen    ),
+      .wdata        (usb_ctrl_wdata  ),
+      .f_full       (usb_ctrl_full   ),
+      .pkend        (usb_ctrl_pkend  ),
+      .fifoaddr     (usb_ctrl_fifoadr),
+      .rx_cache_vd  (rx_cache_vd     ),
+      .rx_cache_data(rx_cache_data   ),
+      .rx_cache_sop (rx_cache_sop    ),
+      .rx_cache_eop (rx_cache_eop    ),
+      .tx_cache_sop (cmdec_tx_eop    ),
+      .tx_cache_addr(tx_cache_addr   ),
+      .tx_cache_data(tx_cache_data   )
    );
+   
+   ////////////////// command decode
+   wire [`AD_CHN_NBIT-1:0]   ad_chn;
+   wire                      cmdec_tx_vd  ;
+   wire [`USB_ADDR_NBIT:0]   cmdec_tx_addr;
+   wire [`USB_DATA_NBIT-1:0] cmdec_tx_data;
+   wire                      cmdec_tx_eop ;
+   cmd_decode u_cmd_decode
+   (
+      .mclk   (mclk         ),
+      .ad_clk (ad_clk       ),
+      .ad_data(ad_data      ),
+      .ad_chn (ad_chn       ),
+      .rx_vd  (rx_cache_vd  ),
+      .rx_data(rx_cache_data),
+      .rx_sop (rx_cache_sop ),
+      .rx_eop (rx_cache_eop ),
+      .tx_vd  (cmdec_tx_vd  ),
+      .tx_addr(cmdec_tx_addr),
+      .tx_data(cmdec_tx_data),
+      .tx_eop (cmdec_tx_eop )
+   );       
+
+   ////////////////// TX BUFFER
+   
+   wire [`USB_DATA_NBIT:0] tx_buffer_rdata;
+   assign tx_buffer_rdata = {cmdec_tx_addr[`USB_ADDR_NBIT],tx_cache_addr};
+
+   buffered_ram#(`USB_ADDR_NBIT+1,`USB_DATA_NBIT,"./tx_buf_512x16.mif")
+   tx_buffer(
+      .inclk       (mclk           ),
+      .in_wren     (cmdec_tx_vd    ),
+      .in_wraddress(cmdec_tx_addr  ),
+      .in_wrdata   (cmdec_tx_data  ),
+      .in_rdaddress(tx_buffer_rdata),
+      .out_rddata  (tx_cache_data  )
+   );   
 
 endmodule

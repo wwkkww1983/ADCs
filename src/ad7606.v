@@ -82,7 +82,7 @@ module ad7606(
    
    always@(posedge clk) begin
       if(cnt<16'hffff) begin
-        cnt<=cnt+1;
+        cnt<=cnt+1'b1;
         ad_reset<=1'b1;
       end
       else
@@ -138,18 +138,18 @@ module ad7606(
                i<=i+1'b1;
          end
          AD_CONV: begin     
-            if(i==2) begin                        //µÈ´ý2¸öclock
+            if(i==2) begin                        //ï¿½È´ï¿½2ï¿½ï¿½clock
                i<=0;          
                state<=Wait_1;
                ad_convstab<=1'b1;                  
             end
             else begin
                i<=i+1'b1;
-               ad_convstab<=1'b0;                     //Æô¶¯AD×ª»»
+               ad_convstab<=1'b0;                     //ï¿½ï¿½ï¿½ï¿½AD×ªï¿½ï¿½
             end
          end
          Wait_1: begin            
-            if(i==5) begin                           //µÈ´ý5¸öclock, µÈ´ýbusyÐÅºÅÎª¸ß
+            if(i==5) begin                           //ï¿½È´ï¿½5ï¿½ï¿½clock, ï¿½È´ï¿½busyï¿½Åºï¿½Îªï¿½ï¿½
                i<=0;
                state<=Wait_busy;
             end
@@ -157,17 +157,17 @@ module ad7606(
                i<=i+1'b1;
          end     
          Wait_busy: begin            
-             if(ad_busy==1'b0) begin                    //µÈ´ýbusyÐÅºÅÎªµÍ
+             if(ad_busy==1'b0) begin                    //ï¿½È´ï¿½busyï¿½Åºï¿½Îªï¿½ï¿½
                 i<=0;          
                 state<=READ_CH1;
              end
          end
          READ_CH1: begin 
-             ad_cs<=1'b0;                              //csÐÅºÅÓÐÐ§    
+             ad_cs<=1'b0;                              //csï¿½Åºï¿½ï¿½ï¿½Ð§    
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch1<=ad_data;                        //¶ÁCH1
+                ad_ch1<=ad_data;                        //ï¿½ï¿½CH1
                 state<=READ_CH2;           
              end
              else begin
@@ -179,7 +179,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch2<=ad_data;                        //¶ÁCH2
+                ad_ch2<=ad_data;                        //ï¿½ï¿½CH2
                 state<=READ_CH3;           
              end
              else begin
@@ -191,7 +191,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch3<=ad_data;                        //¶ÁCH3
+                ad_ch3<=ad_data;                        //ï¿½ï¿½CH3
                 state<=READ_CH4;           
              end
              else begin
@@ -203,7 +203,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch4<=ad_data;                        //¶ÁCH4
+                ad_ch4<=ad_data;                        //ï¿½ï¿½CH4
                 state<=READ_CH5;           
              end
              else begin
@@ -215,7 +215,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch5<=ad_data;                        //¶ÁCH5
+                ad_ch5<=ad_data;                        //ï¿½ï¿½CH5
                 state<=READ_CH6;           
              end
              else begin
@@ -227,7 +227,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch6<=ad_data;                        //¶ÁCH6
+                ad_ch6<=ad_data;                        //ï¿½ï¿½CH6
                 state<=READ_CH7;           
              end
              else begin
@@ -239,7 +239,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch7<=ad_data;                        //¶ÁCH7
+                ad_ch7<=ad_data;                        //ï¿½ï¿½CH7
                 state<=READ_CH8;           
              end
              else begin
@@ -251,7 +251,7 @@ module ad7606(
              if(i==3) begin
                 ad_rd<=1'b1;
                 i<=0;
-                ad_ch8<=ad_data;                        //¶ÁCH8
+                ad_ch8<=ad_data;                        //ï¿½ï¿½CH8
                 state<=READ_DONE;             
              end
              else begin
