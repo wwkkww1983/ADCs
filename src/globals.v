@@ -34,20 +34,19 @@
    `define USB_WR_FIFOADR      `USB_FIFOADR_NBIT'b10 // end point 6
    
    ////////////////// BUFFER
-   `define BUFFER_BADDR_NBIT   2
+   `define BUFFER_BADDR_NBIT   3 // 2^3 X 512bytes  
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    
    ////////////////// AD7606
-   `define AD_DATA_NBIT        16
-   `define AD_CHN_NBIT         3                 // channel 
-   `define AD_CHN_NUM          8                 // channel number
-   `define AD_CHE_ADDR_NBIT    9                 // cache buffer address width 
-   `define AD_CHE_DATA_SIZE    `AD_CHE_NBIT'd507 // cache buffer data size
+   `define AD_DATA_NBIT        `USB_DATA_NBIT
+   `define AD_CHN_NBIT         3   // channel 
+   `define AD_CHN_NUM          8   // channel number
+   `define AD_CHE_ADDR_NBIT    `USB_ADDR_NBIT   // cache buffer address width 
+   `define AD_CHE_DATA_SIZE    `USB_ADDR_NBIT'd250 // cache buffer data size
    
    ////////////////// COMMUNICATION, BYTE INVERTED
    `define MSG_STR_NBIT        `USB_DATA_NBIT
-   `define MSG_DATA_MAX_NBIT   96
       
    `define MSG_HEAD            `MSG_STR_NBIT'h5453  // "ST"
    

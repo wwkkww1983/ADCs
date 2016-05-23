@@ -21,17 +21,6 @@ module top
    // Clock Source
    CLK1,
    OE,
-   // SDRAM
-   SDRAM_A,
-   SDRAM_D,
-   SDRAM_DQM,
-   SDRAM_BA,
-   SDRAM_NCS,
-   SDRAM_CKE,
-   SDRAM_NRAS,
-   SDRAM_NWE,
-   SDRAM_CLK,
-   SDRAM_NCAS,
    // AD7606
    AD_DATA,
    AD_BUSY,
@@ -77,17 +66,6 @@ module top
    output                         AD_RD;
    output                         AD_RESET;
    output                         AD_CONVSTAB;
-
-   output [`SDRAM_ADDR_NBIT-1:0]  SDRAM_A;
-   inout  [`SDRAM_DATA_NBIT-1:0]  SDRAM_D;
-   output [`SDRAM_DQM_NBIT-1:0]   SDRAM_DQM;
-   output [`SDRAM_BA_NBIT-1:0]    SDRAM_BA;
-   output [`SDRAM_NCS_NBIT-1:0]   SDRAM_NCS;
-   output                         SDRAM_CKE;
-   output                         SDRAM_NRAS;
-   output                         SDRAM_NWE;
-   output                         SDRAM_CLK;
-   output                         SDRAM_NCAS;
 
    ////////////////// ARCH ////////////////////
 
@@ -212,12 +190,13 @@ module top
    );
    
    ////////////////// command decode
-   wire                      cmdec_ad_rd;
-   wire [`AD_CHN_NBIT-1:0]   cmdec_ad_chn;
-   wire                      cmdec_tx_vd  ;
-   wire [`USB_ADDR_NBIT:0]   cmdec_tx_addr;
-   wire [`USB_DATA_NBIT-1:0] cmdec_tx_data;
-   wire                      cmdec_tx_eop ;
+   wire                          cmdec_ad_rd;
+   wire [`AD_CHN_NBIT-1:0]       cmdec_ad_chn;
+   wire                          cmdec_tx_vd  ;
+   wire [`BUFFER_ADDR_NBIT-1:0]  cmdec_tx_addr;
+   wire [`USB_DATA_NBIT-1:0]     cmdec_tx_data;
+   wire                          cmdec_tx_eop ;
+   wire [`BUFFER_BADDR_NBIT-1:0] cmdex_tx_baddr;
    cmd_decode u_cmd_decode
    (
       .mclk     (mclk           ),
@@ -232,15 +211,16 @@ module top
       .tx_vd    (cmdec_tx_vd    ),
       .tx_addr  (cmdec_tx_addr  ),
       .tx_data  (cmdec_tx_data  ),
-      .tx_eop   (cmdec_tx_eop   )
+      .tx_eop   (cmdec_tx_eop   ),
+      .tx_baddr (cmdex_tx_baddr )
    );
 
    ////////////////// TX BUFFER
    
    wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_rdata;
-   assign tx_buffer_rdata = {cmdec_tx_addr[`BUFFER_ADDR_NBIT-1],tx_cache_addr};
+   assign tx_buffer_rdata = {cmdex_tx_baddr,tx_cache_addr};
 
-   buffered_ram#(`USB_ADDR_NBIT+1,`USB_DATA_NBIT,"./tx_buf_512x16.mif")
+   buffered_ram#(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,"./tx_buf_2048x16.mif")
    tx_buffer(
       .inclk       (mclk           ),
       .in_wren     (cmdec_tx_vd    ),

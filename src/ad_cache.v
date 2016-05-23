@@ -43,18 +43,20 @@ module ad_cache
    reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;
    reg                          wswitch;
    always@(posedge wclk) begin
-      waddr <= waddr + 1'b1;
-      if(waddr == `AD_CHE_DATA_SIZE-1) bwgin
-         waddr <= 0;
-         wswitch <= ~wswitch;
+      if(wr) begin
+         waddr <= waddr + 1'b1;
+         if(waddr == `AD_CHE_DATA_SIZE-1) begin
+            waddr <= 0;
+            wswitch <= ~wswitch;
+         end
       end
    end
    
-   reg  [`AD_CHE_ADDR_NBIT-1:0] buf_waddr;
+   wire [`AD_CHE_ADDR_NBIT:0] buf_waddr;
    assign buf_waddr = {wswitch,waddr};
 
    ////////////////// PING PANG BUFFER   
-   buffered_ram_tdp #(`AD_CHE_NBIT+1,`AD_DATA_NBIT)
+   buffered_ram_tdp #(`AD_CHE_ADDR_NBIT+1,`AD_DATA_NBIT)
    pingpang_cache
    (
       .a_inclk     (wclk),
@@ -74,11 +76,11 @@ module ad_cache
    reg                          switch;
    reg  [`AD_CHE_ADDR_NBIT-1:0] raddr;
    wire [`AD_CHE_ADDR_NBIT:0]   buf_raddr;
-   assign buf_raddr = {~pp_switch[2],raddr};
+   assign buf_raddr = {~pp_wswitch[2],raddr};
    
    always@(posedge rclk) begin   
-      pp_wswitch <= {pp_switch[1:0],wswitch};
-      switch <= ^pp_switch[2:1];
+      pp_wswitch <= {pp_wswitch[1:0],wswitch};
+      switch <= ^pp_wswitch[2:1];
       
       if(switch)
          raddr <= 0;

@@ -74,7 +74,7 @@ module usb_slavefifo
       prev_f_empty <= f_empty;
    end
    assign sloe =~f_empty&~tx_in_proc;
-   assign slrd =~f_empty&~prev_f_empty;
+   assign slrd =~f_empty&~tx_in_proc&~prev_f_empty;
 
    ////////////////// rx cache output
    assign rx_cache_vd   = slrd;
@@ -83,12 +83,13 @@ module usb_slavefifo
    assign rx_cache_eop  = f_empty&~prev_f_empty;
       
    ////////////////// WRITING
-   `define ST_IDLE 2'd0
-   `define ST_T0   2'd1
-   `define ST_T1   2'd2
-   `define ST_T2   2'd3
+   `define ST_IDLE 3'd0
+   `define ST_T0   3'd1
+   `define ST_T1   3'd2
+   `define ST_T2   3'd3
+   `define ST_T3   3'd4
    
-   reg [1:0] tx_st;
+   reg [2:0] tx_st;
 
    reg [7:0]                tx_delay_cnt;
    reg [`USB_ADDR_NBIT-1:0] tx_cache_addr;
@@ -106,22 +107,28 @@ module usb_slavefifo
             if(tx_cache_sop)
                tx_st <= `ST_T0;
          end
-         `ST_T0: begin // Check if FIFO is Full
+         `ST_T0: begin // Check if RX FIFO is EMPTY
+            tx_delay_cnt <= 0;
+            tx_cache_addr <= 0;
+            if(f_empty)
+               tx_st <= `ST_T1;
+         end
+         `ST_T1: begin // Check if TX FIFO is FULL
             if(~f_full) begin
                tx_cache_addr <= tx_cache_addr + 1'b1;
-               tx_delay_cnt <= 8'd1;
-               tx_st <= `ST_T1;
+               tx_delay_cnt <= 8'd1; // delay 1 cycle, wait for RAM outputing
+               tx_st <= `ST_T2;
             end
          end
-         `ST_T1: begin // wait for DATA
+         `ST_T2: begin // wait for DATA
             tx_delay_cnt <= tx_delay_cnt - 1'b1;
             tx_cache_addr <= tx_cache_addr + 1'b1;
             if(tx_delay_cnt==0) begin
                tx_delay_cnt  <= 0;
-               tx_st <= `ST_T2;
+               tx_st <= `ST_T3;
             end
          end
-         `ST_T2: begin
+         `ST_T3: begin
             tx_cache_addr <= tx_cache_addr + 1'b1;
             if(tx_cache_addr=={`USB_ADDR_NBIT{1'b1}}) begin
                tx_st <= `ST_IDLE;
@@ -138,22 +145,27 @@ module usb_slavefifo
    always@* begin
       wdata <= tx_cache_data;
       case(tx_st) 
-         `ST_IDLE: begin // wait for sop
+         `ST_IDLE: begin // wait for sop & check if TX FIFO is FULL
             tx_in_proc <= `LOW;
             fifoaddr   <= slwr ? `USB_WR_FIFOADR : `USB_RD_FIFOADR;
+            wen        <= slwr ? `HIGH : `LOW;
+         end
+         `ST_T0: begin // wait for deactive of empty flag
+            tx_in_proc <= `LOW;
+            fifoaddr   <= f_empty ? `USB_WR_FIFOADR : `USB_RD_FIFOADR;
             wen        <= `LOW;
-         end
-         `ST_T0: begin // wait for deactive of full flag
-            tx_in_proc <= ~f_full;
+         end         
+         `ST_T1: begin // wait for deactive of full flag
+            tx_in_proc <=~f_full;
             fifoaddr   <= `USB_WR_FIFOADR;
-            wen        <= `HIGH;
+            wen        <=~f_full;
          end
-         `ST_T1: begin // set SLWR
+         `ST_T2: begin // set SLWR
             tx_in_proc <= `HIGH;
             fifoaddr   <= `USB_WR_FIFOADR;
             wen        <= `HIGH;
          end
-         `ST_T2: begin
+         `ST_T3: begin
             tx_in_proc <= ~f_full;
             fifoaddr   <= `USB_WR_FIFOADR;
             wen        <= `HIGH;

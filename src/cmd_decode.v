@@ -34,26 +34,28 @@ module cmd_decode
    tx_vd,
    tx_addr,
    tx_data,
-   tx_eop
+   tx_eop,
+   tx_baddr
 ); 
 
    ////////////////// PORT ////////////////////
-   input                         mclk;   // main clock 48MHz
-   
-   output                        ad_rd;
-   input  [`AD_DATA_NBIT-1:0]    ad_data;
-   input                         ad_switch;
-   output [`AD_CHN_NBIT-1:0]     ad_chn;
-
-   input                         rx_vd  ;
-   input  [`USB_DATA_NBIT-1:0]   rx_data;
-   input                         rx_sop ;
-   input                         rx_eop ;
-                                 
-   output                        tx_vd;
-   output [`USB_ADDR_NBIT:0]     tx_addr;
-   output [`USB_DATA_NBIT-1:0]   tx_data;
-   output                        tx_eop;
+   input                           mclk;   // main clock 48MHz
+                                   
+   output                          ad_rd;
+   input  [`AD_DATA_NBIT-1:0]      ad_data;
+   input                           ad_switch;
+   output [`AD_CHN_NBIT-1:0]       ad_chn;
+                                   
+   input                           rx_vd  ;
+   input  [`USB_DATA_NBIT-1:0]     rx_data;
+   input                           rx_sop ;
+   input                           rx_eop ;
+                                   
+   output                          tx_vd;
+   output [`BUFFER_ADDR_NBIT-1:0]  tx_addr;
+   output [`USB_DATA_NBIT-1:0]     tx_data;
+   output                          tx_eop;
+   output [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
 
    ////////////////// ARCH ////////////////////
 
@@ -69,7 +71,6 @@ module cmd_decode
    
    // RX Message Structure: {HEAD,TYPE,CHANNEL_ADDRESS}
    reg [`MSG_STR_NBIT-1:0]       ascii_rx_type;  // "00": handshake; "01": start; "02": stop
-   reg [`MSG_STR_NBIT-1:0]       ascii_rx_ch_addr;
    reg [`MSG_STR_NBIT/2-1:0]     rx_ch_addr;     // "00" ~ "07"
    
    reg [2:0]                     fsm_rx_st;
@@ -98,7 +99,6 @@ module cmd_decode
                ascii_rx_type  <= 0;
                rx_ch_addr     <= 0;
                fsm_rx_err     <= `LOW;
-               ascii_rx_ch_addr <= 0;
             end
          end
          `ST_MSG_HEAD: begin
@@ -113,19 +113,15 @@ module cmd_decode
                // - "00": HANDSHAKE
                // - "01": START
                // - "02": STOP
-               ascii_rx_type  <= rx_data;
-               fsm_rx_st      <= `ST_MSG_CHADDR;
+               ascii_rx_type <= rx_data;
+               fsm_rx_st     <= `ST_MSG_CHADDR;
             end
          end
          `ST_MSG_CHADDR: begin
             if(rx_vd) begin
-               fsm_rx_st        <= `ST_MSG_END;
-               ascii_rx_ch_addr <= rx_data;
-               rx_ch_addr       <= atoi_rx_data;
-               if(rx_data[`MSG_STR_NBIT/2-1:0]==`MSG_END_N || rx_data[`MSG_STR_NBIT/2-1:0]==`MSG_END_R)
-                  fsm_rx_err       <= atoi_err;
-               else   
-                  fsm_rx_err       <= `HIGH;
+               fsm_rx_st  <= `ST_MSG_END;
+               rx_ch_addr <= atoi_rx_data;
+               fsm_rx_err <= atoi_err;
             end
          end
          `ST_MSG_END: begin
@@ -176,12 +172,10 @@ module cmd_decode
             
    ////////////////// TX STATEMENT         
    
-   wire   tx_msg_sop;
-   assign tx_msg_sop = proc_handshake_start |
-                      (proc_ad_acq & ad_switch);
-   
+   wire                          tx_msg_sop;
+   reg  [2:0]                    tx_st=`ST_MSG_IDLE;
    reg                           tx_vd;
-   reg [`USB_DATA_NBIT-1:0]      tx_data;
+   reg  [`USB_DATA_NBIT-1:0]     tx_data;
    reg                           tx_eop;
    reg  [`BUFFER_BADDR_NBIT-1:0] tx_buf_baddr; // Base address of BUFFER
                                                // 2'b00: Hadshake
@@ -189,32 +183,22 @@ module cmd_decode
                                                // 2'b10: ADC Data Ping Buffer
                                                // 2'b11: ADC Data Pang Buffer
    reg  [`USB_ADDR_NBIT-1:0]     tx_buf_addr;  // low address of BUFFER
-   wire [`BUFFER_ADDR_NBIT-1:0]  tx_addr;
-   assign tx_addr = {tx_buf_baddr,tx_buf_addr};
+   reg  [`USB_ADDR_NBIT-1:0]     tx_cnt;
+   reg                           ad_rd;
+   reg  [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
 
-   reg [2:0] tx_st=`ST_MSG_IDLE;
-   
-   reg [`MSG_DATA_MAX_NBIT-1:0] tx_msg_data;
-   reg [`USB_ADDR_NBIT-1:0]     tx_msg_addr;
-
-   // convert tx data(DATA Region) from int to char
-   wire [`USB_DATA_NBIT/2-1:0] int_tx_data;
-   wire [`USB_DATA_NBIT-1:0]   char_tx_data;
-   assign int_tx_data = tx_msg_data[`MSG_DATA_MAX_NBIT-1:`MSG_DATA_MAX_NBIT-`USB_DATA_NBIT/2];
-   itoa#(`USB_DATA_NBIT/2) itoa_u
-   (
-      .i_int (int_tx_data),
-      .o_char({char_tx_data[`USB_DATA_NBIT/2-1:0],
-               char_tx_data[`USB_DATA_NBIT-1:`USB_DATA_NBIT/2]}) // invert h and l
-   );
+   assign tx_msg_sop = proc_handshake_start |
+                      (proc_ad_acq & ad_switch);
+   assign tx_addr    = {tx_buf_baddr,tx_buf_addr};
    
    always@(posedge mclk) begin: tx_fsm
       tx_vd  <= `LOW;
       tx_eop <= `LOW;
+      ad_rd  <= `LOW;
       case(tx_st) 
          `ST_MSG_IDLE: begin
             tx_buf_addr <= 0;
-            tx_msg_addr <= 0;
+            tx_cnt <= 0;
             if(tx_msg_sop)
                tx_st <= `ST_MSG_HEAD;
          end
@@ -224,9 +208,13 @@ module cmd_decode
             tx_data <= `MSG_HEAD;
             tx_st <= `ST_MSG_TYPE;
             if(tx_msg_type == `MSG_TYPE_HANDSHAKE)
-               tx_buf_baddr <= 2'b00;
-            else if(tx_msg_type = `MSG_TYPE_START)
-               tx_buf_baddr <= {1'b1,~tx_buf_baddr[0]}; // swap pingpang buffer
+               tx_buf_baddr <= 0;
+            else if(tx_msg_type == `MSG_TYPE_START) begin
+               if(tx_buf_baddr==`BUFFER_BADDR_NBIT'd0 || tx_buf_baddr=={`BUFFER_BADDR_NBIT{1'b1}})
+                  tx_buf_baddr <= `BUFFER_BADDR_NBIT'd1;
+               else
+                  tx_buf_baddr <= tx_buf_baddr + 1'b1;
+            end
          end
          `ST_MSG_TYPE: begin
             tx_vd <= `HIGH;
@@ -244,39 +232,38 @@ module cmd_decode
             tx_vd       <= `HIGH;
             tx_data     <= tx_pf_code;
             tx_buf_addr <= tx_buf_addr + 1'b1;
-            tx_st       <= `ST_MSG_CHADDR;
-            if(tx_msg_type==`MSG_TYPE_HANDSHAKE) begin
+            tx_st       <= `ST_MSG_DATA;
+            tx_cnt      <= `AD_CHE_DATA_SIZE;
+            if(tx_msg_type==`MSG_TYPE_HANDSHAKE) begin // when handshake, gg
                tx_st   <= `ST_MSG_IDLE;
                tx_eop  <= `HIGH;
+               tx_baddr<= tx_buf_baddr;
             end
-         end
-         `ST_MSG_CHADDR: begin
-            tx_vd       <= `HIGH;
-            tx_data     <= ascii_rx_ch_addr;
-            tx_buf_addr <= tx_buf_addr + 1'b1;
-            tx_st       <= `ST_MSG_DATA;
          end
          `ST_MSG_DATA: begin
             tx_vd       <= `HIGH;
             tx_buf_addr <= tx_buf_addr + 1'b1;
-            tx_data     <= char_tx_data;
-            if(tx_msg_addr==0)
+            tx_data     <= {ad_data[`USB_DATA_NBIT/2-1:0],ad_data[`USB_DATA_NBIT-1:`USB_DATA_NBIT/2]};
+            tx_cnt      <= tx_cnt - 1'b1;
+            ad_rd       <= `HIGH;
+            if(tx_cnt==0) begin
+               ad_rd <= `LOW;
                tx_st <= `ST_MSG_END;
+            end
          end
          `ST_MSG_END: begin
-            tx_vd   <= `HIGH;
-            tx_buf_addr <= tx_buf_addr + 1'b1;
-            
-            tx_msg_addr <= 0;
-            if(tx_msg_addr=={`USB_ADDR_NBIT{1'b1}})
+            tx_cnt      <= 0;
+            if(tx_cnt=={`USB_ADDR_NBIT{1'b1}})
                tx_data <= {`MSG_END_N,`MSG_END_R};
-            else begin
+            else
                tx_data <= 0; // clean TX BUFFER
-               if(tx_buf_addr=={`USB_ADDR_NBIT{1'b1}}) begin
-                  tx_vd  <= `LOW;
-                  tx_st  <= `ST_MSG_IDLE;
-                  tx_eop <= `HIGH;
-               end
+            tx_vd       <= `HIGH;
+            tx_buf_addr <= tx_buf_addr + 1'b1;
+            if(tx_buf_addr=={`USB_ADDR_NBIT{1'b1}}) begin
+               tx_vd   <= `LOW;
+               tx_st   <= `ST_MSG_IDLE;
+               tx_eop  <= `HIGH;
+               tx_baddr<= tx_buf_baddr;
             end
          end
          default:

@@ -12,4 +12,4 @@ Create Tagfile=0
 [Files]
 0=.\src\
 [Group Filter]
-.\src\=*.v;*.sdc
+	.\src\=*.v;*.sdc
