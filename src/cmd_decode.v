@@ -22,8 +22,9 @@ module cmd_decode
 (
    mclk,
    
-   ad_clk,
+   ad_rd,
    ad_data,
+   ad_switch,
    ad_chn,
    
    rx_vd,
@@ -37,10 +38,11 @@ module cmd_decode
 ); 
 
    ////////////////// PORT ////////////////////
-   input                         mclk;    // main clock 48MHz
+   input                         mclk;   // main clock 48MHz
    
-   input                         ad_clk; // adc clock 50MHz
+   output                        ad_rd;
    input  [`AD_DATA_NBIT-1:0]    ad_data;
+   input                         ad_switch;
    output [`AD_CHN_NBIT-1:0]     ad_chn;
 
    input                         rx_vd  ;
@@ -137,11 +139,12 @@ module cmd_decode
       endcase
    end
    
+   assign ad_chn = rx_ch_addr[`AD_CHN_NBIT-1:0];
+   
    ////////////////// Instruction Execute
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_type;
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_pf;
    reg  [`MSG_STR_NBIT-1:0]       tx_pf_code;
-   reg                            tx_buf_baddr; // base address of BUFFER
                              
    reg proc_handshake_start;
    reg proc_ad_acq;
@@ -150,21 +153,18 @@ module cmd_decode
       proc_handshake_start <= `LOW;
       case(ascii_rx_type)
          `MSG_TYPE_HANDSHAKE: begin
-            tx_buf_baddr <= `LOW;
             tx_msg_type  <= `MSG_TYPE_HANDSHAKE;
             tx_msg_pf    <= `MSG_PASS;
             tx_pf_code   <= `MSG_FP_CODE_01; // pass code 01: handshake succeed
             proc_handshake_start <= fsm_rx_eop;
          end
          `MSG_TYPE_START: begin
-            tx_buf_baddr <= `HIGH;
             tx_msg_type  <= `MSG_TYPE_START;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_02 : `MSG_FP_CODE_01; 
             proc_ad_acq  <= `HIGH;
          end
          `MSG_TYPE_STOP: begin
-            tx_buf_baddr <= `HIGH;
             tx_msg_type  <= `MSG_TYPE_STOP;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_12 : `MSG_FP_CODE_11;
@@ -177,14 +177,19 @@ module cmd_decode
    ////////////////// TX STATEMENT         
    
    wire   tx_msg_sop;
-   assign tx_msg_sop = proc_handshake_start;
+   assign tx_msg_sop = proc_handshake_start |
+                      (proc_ad_acq & ad_switch);
    
-   reg                       tx_vd;
-   reg [`USB_DATA_NBIT-1:0]  tx_data;
-   reg                       tx_eop;
-
-   reg  [`USB_ADDR_NBIT-1:0] tx_buf_addr; // low address of BUFFER
-   wire [`USB_ADDR_NBIT:0]   tx_addr;
+   reg                           tx_vd;
+   reg [`USB_DATA_NBIT-1:0]      tx_data;
+   reg                           tx_eop;
+   reg  [`BUFFER_BADDR_NBIT-1:0] tx_buf_baddr; // Base address of BUFFER
+                                               // 2'b00: Hadshake
+                                               // 2'b01: Reserved
+                                               // 2'b10: ADC Data Ping Buffer
+                                               // 2'b11: ADC Data Pang Buffer
+   reg  [`USB_ADDR_NBIT-1:0]     tx_buf_addr;  // low address of BUFFER
+   wire [`BUFFER_ADDR_NBIT-1:0]  tx_addr;
    assign tx_addr = {tx_buf_baddr,tx_buf_addr};
 
    reg [2:0] tx_st=`ST_MSG_IDLE;
@@ -218,6 +223,10 @@ module cmd_decode
             tx_buf_addr <= 0;
             tx_data <= `MSG_HEAD;
             tx_st <= `ST_MSG_TYPE;
+            if(tx_msg_type == `MSG_TYPE_HANDSHAKE)
+               tx_buf_baddr <= 2'b00;
+            else if(tx_msg_type = `MSG_TYPE_START)
+               tx_buf_baddr <= {1'b1,~tx_buf_baddr[0]}; // swap pingpang buffer
          end
          `ST_MSG_TYPE: begin
             tx_vd <= `HIGH;
@@ -246,11 +255,8 @@ module cmd_decode
             tx_data     <= ascii_rx_ch_addr;
             tx_buf_addr <= tx_buf_addr + 1'b1;
             tx_st       <= `ST_MSG_DATA;
-                
          end
          `ST_MSG_DATA: begin
-            
-            
             tx_vd       <= `HIGH;
             tx_buf_addr <= tx_buf_addr + 1'b1;
             tx_data     <= char_tx_data;

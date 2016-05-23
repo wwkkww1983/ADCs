@@ -132,11 +132,29 @@ module top
       .ad_ch8     (ad_ch_data[7])
    );
    
-   wire [`AD_DATA_NBIT-1:0]   ad_data;
-   wire                       ad_vd;
-   assign ad_data = ad_ch_data[ad_chn];
-   assign ad_vd   = ad_ch_vd;
+   reg  [`AD_CHN_NBIT-1:0]  ad_chn;
+   wire [`AD_DATA_NBIT-1:0] ad_cache_wdata;
+   wire                     ad_cache_wr;
+   wire [`AD_DATA_NBIT-1:0] ad_cache_rdata;
+   wire                     ad_cache_switch;
+   always@(posedge mclk) begin
+      if(ad_cache_switch)
+         ad_chn <= cmdec_ad_chn;
+   end
+   assign ad_cache_wr    = ad_ch_vd;
+   assign ad_cache_wdata = ad_ch_data[ad_chn];
 
+   ad_cache u_ad_cache
+   (
+      .wclk  (ad_clk         ),
+      .wr    (ad_cache_wr    ),
+      .wdata (ad_cache_wdata ),
+      .rclk  (mclk           ),
+      .rd    (cmdec_ad_rd    ),
+      .rdata (ad_cache_rdata ),
+      .switch(ad_cache_switch)
+   );
+   
    ////////////////// USB PHY Slave FIFO Controller
 
    // slave fifo control
@@ -194,31 +212,33 @@ module top
    );
    
    ////////////////// command decode
-   wire [`AD_CHN_NBIT-1:0]   ad_chn;
+   wire                      cmdec_ad_rd;
+   wire [`AD_CHN_NBIT-1:0]   cmdec_ad_chn;
    wire                      cmdec_tx_vd  ;
    wire [`USB_ADDR_NBIT:0]   cmdec_tx_addr;
    wire [`USB_DATA_NBIT-1:0] cmdec_tx_data;
    wire                      cmdec_tx_eop ;
    cmd_decode u_cmd_decode
    (
-      .mclk   (mclk         ),
-      .ad_clk (ad_clk       ),
-      .ad_data(ad_data      ),
-      .ad_chn (ad_chn       ),
-      .rx_vd  (rx_cache_vd  ),
-      .rx_data(rx_cache_data),
-      .rx_sop (rx_cache_sop ),
-      .rx_eop (rx_cache_eop ),
-      .tx_vd  (cmdec_tx_vd  ),
-      .tx_addr(cmdec_tx_addr),
-      .tx_data(cmdec_tx_data),
-      .tx_eop (cmdec_tx_eop )
-   );       
+      .mclk     (mclk           ),
+      .ad_rd    (cmdec_ad_rd    ),
+      .ad_chn   (cmdec_ad_chn   ),
+      .ad_data  (ad_cache_rdata ),
+      .ad_switch(ad_cache_switch),
+      .rx_vd    (rx_cache_vd    ),
+      .rx_data  (rx_cache_data  ),
+      .rx_sop   (rx_cache_sop   ),
+      .rx_eop   (rx_cache_eop   ),
+      .tx_vd    (cmdec_tx_vd    ),
+      .tx_addr  (cmdec_tx_addr  ),
+      .tx_data  (cmdec_tx_data  ),
+      .tx_eop   (cmdec_tx_eop   )
+   );
 
    ////////////////// TX BUFFER
    
-   wire [`USB_DATA_NBIT:0] tx_buffer_rdata;
-   assign tx_buffer_rdata = {cmdec_tx_addr[`USB_ADDR_NBIT],tx_cache_addr};
+   wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_rdata;
+   assign tx_buffer_rdata = {cmdec_tx_addr[`BUFFER_ADDR_NBIT-1],tx_cache_addr};
 
    buffered_ram#(`USB_ADDR_NBIT+1,`USB_DATA_NBIT,"./tx_buf_512x16.mif")
    tx_buffer(
