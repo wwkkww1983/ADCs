@@ -79,6 +79,13 @@ set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altp
 set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[1] } -clock_fall -min -3.6 [get_ports {USB_SLWR}]
 set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[1] } 0 [get_ports {USB_IFCLK}]
 set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[0] } 0 [get_ports {USB_XTALIN}]
+set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[1] } -clock_fall -max 5 [get_ports {USB_FIFOADR[*]}]
+set_output_delay -clock { usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[1] } -clock_fall -min -10 [get_ports {USB_FIFOADR[*]}]
+
+set_max_delay -from [get_ports {USB_SLOE}] -to [get_ports {USB_DB[*]}] 10.5
+set_min_delay -from [get_ports {USB_SLOE}] -to [get_ports {USB_DB[*]}] 0
+
+set_max_delay -from [get_ports {USB_FIFOADR[*]}] -to [get_ports {USB_FLAGB}] 10.7
 
 #**************************************************************
 # Set Clock Groups
@@ -92,7 +99,14 @@ set_false_path -from [get_ports {USB_FLAGB}] -to {USB_SLOE}
 set_false_path -from [get_ports {USB_FLAGB}] -to {USB_SLRD}
 set_false_path -from [get_ports {USB_FLAGC}] -to {USB_SLOE}
 set_false_path -from {usb_slavefifo:u_usb_slavefifo|slwr} -to [get_ports {USB_FIFOADR[1]}]
-set_false_path -from {main_clk_gen|altpll_component|auto_generated|pll1|clk[0]} -to [get_ports {USB_IFCLK}]
+set_false_path -from {usb_slavefifo:u_usb_slavefifo|tx_st.*} -to [get_ports {USB_DB[*]}]
+set_false_path -from {USB_FLAGC} -to [get_ports {USB_DB[*]}]
+set_false_path -from {USB_FLAGC} -to [get_ports {USB_DB[*]}]
+set_false_path -from {buffered_ram:tx_buffer|altsyncram:buffered_ram_altsyncram|altsyncram_76s1:auto_generated|q_b[*]} -to [get_ports {USB_DB[*]}]
+set_false_path -from {usb_slavefifo:u_usb_slavefifo|tx_st.001} -to [get_ports {USB_FIFOADR[1]}]
+set_false_path -from {USB_FLAGC} -to {USB_SLRD}
+set_false_path -from [get_ports {USB_FLAGB}] -to [get_ports {USB_FIFOADR[*]}]
+set_false_path -from {usb_slavefifo:u_usb_slavefifo|tx_st.000} -to {USB_FIFOADR[1]}
 
 #**************************************************************
 # Set Multicycle Path

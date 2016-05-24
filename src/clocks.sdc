@@ -74,6 +74,7 @@ derive_clock_uncertainty
 #**************************************************************
 # Set Clock Groups
 #**************************************************************
+set_clock_groups -exclusive -group [get_clocks {usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[1]}] -group [get_clocks {usb_pll:usb_pll_u|altpll:altpll_component|usb_pll_altpll:auto_generated|wire_pll1_clk[2]}]
 
 #**************************************************************
 # Set False Path
