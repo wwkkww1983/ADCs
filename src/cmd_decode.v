@@ -26,6 +26,7 @@ module cmd_decode
    ad_data,
    ad_switch,
    ad_chn,
+   ad_acq_en,
    
    rx_vd,
    rx_data,
@@ -45,6 +46,7 @@ module cmd_decode
    input  [`AD_DATA_NBIT-1:0]      ad_data;
    input                           ad_switch;
    output [`AD_CHN_NBIT-1:0]       ad_chn;
+   output                          ad_acq_en;
                                    
    input                           rx_vd  ;
    input  [`USB_DATA_NBIT-1:0]     rx_data;
@@ -71,7 +73,9 @@ module cmd_decode
    
    // RX Message Structure: {HEAD,TYPE,CHANNEL_ADDRESS}
    reg [`MSG_STR_NBIT-1:0]       ascii_rx_type;  // "00": handshake; "01": start; "02": stop
+   reg [`MSG_STR_NBIT-1:0]       ascii_ch_addr;
    reg [`MSG_STR_NBIT/2-1:0]     rx_ch_addr;     // "00" ~ "07"
+	reg									ad_acq_en;
    
    reg [2:0]                     fsm_rx_st;
    reg                           fsm_rx_err;
@@ -97,7 +101,6 @@ module cmd_decode
             if(rx_sop) begin
                fsm_rx_st          <= `ST_MSG_HEAD;
                ascii_rx_type  <= 0;
-               rx_ch_addr     <= 0;
                fsm_rx_err     <= `LOW;
             end
          end
@@ -119,9 +122,15 @@ module cmd_decode
          end
          `ST_MSG_CHADDR: begin
             if(rx_vd) begin
-               fsm_rx_st  <= `ST_MSG_END;
-               rx_ch_addr <= atoi_rx_data;
-               fsm_rx_err <= atoi_err;
+               fsm_rx_st     <= `ST_MSG_END;
+               fsm_rx_err    <= atoi_err;
+               
+               if(ascii_rx_type==`MSG_TYPE_START)
+                  ad_acq_en <= `HIGH;
+               else if(ascii_rx_type==`MSG_TYPE_STOP)
+                  ad_acq_en <= `LOW;
+               rx_ch_addr    <= atoi_rx_data;
+               ascii_ch_addr <= rx_data;
             end
          end
          `ST_MSG_END: begin
@@ -135,12 +144,13 @@ module cmd_decode
       endcase
    end
    
-   assign ad_chn = rx_ch_addr[`AD_CHN_NBIT-1:0];
+   assign ad_chn    = rx_ch_addr[`AD_CHN_NBIT-1:0];
    
    ////////////////// Instruction Execute
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_type;
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_pf;
    reg  [`MSG_STR_NBIT-1:0]       tx_pf_code;
+   reg  [`AD_CNT_NBIT-1:0]        tx_adc_cnt;
                              
    reg proc_handshake_start;
    reg proc_ad_acq;
@@ -159,12 +169,16 @@ module cmd_decode
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_02 : `MSG_FP_CODE_01; 
             proc_ad_acq  <= `HIGH;
+            if(ad_switch) begin
+            	tx_adc_cnt <= tx_adc_cnt + 1'b1;
+            end
          end
          `MSG_TYPE_STOP: begin
             tx_msg_type  <= `MSG_TYPE_STOP;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_12 : `MSG_FP_CODE_11;
             proc_ad_acq  <= `LOW;
+            tx_adc_cnt   <= 0;
          end
          default:;
       endcase
@@ -186,6 +200,7 @@ module cmd_decode
    reg  [`USB_ADDR_NBIT-1:0]     tx_cnt;
    reg                           ad_rd;
    reg  [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
+   reg  [`AD_CNT_NBIT-1:0]       p_adc_cnt;
 
    assign tx_msg_sop = proc_handshake_start |
                       (proc_ad_acq & ad_switch);
@@ -233,7 +248,7 @@ module cmd_decode
             tx_data     <= tx_pf_code;
             tx_buf_addr <= tx_buf_addr + 1'b1;
             tx_st       <= `ST_MSG_DATA;
-            tx_cnt      <= `AD_CHE_DATA_SIZE;
+            tx_cnt      <= `AD_CHE_DATA_SIZE + `AD_CNT_NWORD + 1'b1;
             if(tx_msg_type==`MSG_TYPE_HANDSHAKE) begin // when handshake, gg
                tx_st   <= `ST_MSG_IDLE;
                tx_eop  <= `HIGH;
@@ -243,16 +258,28 @@ module cmd_decode
          `ST_MSG_DATA: begin
             tx_vd       <= `HIGH;
             tx_buf_addr <= tx_buf_addr + 1'b1;
-            tx_data     <= {ad_data[`USB_DATA_NBIT/2-1:0],ad_data[`USB_DATA_NBIT-1:`USB_DATA_NBIT/2]};
+            if(tx_cnt==`AD_CHE_DATA_SIZE + `AD_CNT_NWORD + 1'b1)
+            	tx_data <= ascii_ch_addr;
+            else if(tx_cnt==`AD_CHE_DATA_SIZE + `AD_CNT_NWORD) begin
+            	p_adc_cnt <= tx_adc_cnt<<`USB_DATA_NBIT;
+            	tx_data   <= {tx_adc_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],tx_adc_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
+            end
+            else if(tx_cnt<`AD_CHE_DATA_SIZE + `AD_CNT_NWORD && tx_cnt>`AD_CHE_DATA_SIZE) begin
+            	p_adc_cnt <= p_adc_cnt<<`USB_DATA_NBIT;
+            	tx_data   <= {p_adc_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],p_adc_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
+            end
+            else begin
+               ad_rd   <= `HIGH;
+               tx_data <= {ad_data[`USB_DATA_NBIT/2-1:0],ad_data[`USB_DATA_NBIT-1:`USB_DATA_NBIT/2]};
+            end
             tx_cnt      <= tx_cnt - 1'b1;
-            ad_rd       <= `HIGH;
             if(tx_cnt==0) begin
                ad_rd <= `LOW;
                tx_st <= `ST_MSG_END;
             end
          end
          `ST_MSG_END: begin
-            tx_cnt      <= 0;
+            tx_cnt     <= 0;
             if(tx_cnt=={`USB_ADDR_NBIT{1'b1}})
                tx_data <= {`MSG_END_N,`MSG_END_R};
             else

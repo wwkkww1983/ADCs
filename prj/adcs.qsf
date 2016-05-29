@@ -149,30 +149,30 @@ set_location_assignment PIN_M15 -to USB_FLAGB
 set_location_assignment PIN_E16 -to USB_FLAGC
 
 set_location_assignment PIN_P14 -to AD_OS[0]
-set_location_assignment PIN_E5  -to AD_OS[1]
+set_location_assignment PIN_E5 -to AD_OS[1]
 set_location_assignment PIN_M11 -to AD_OS[2]
-set_location_assignment PIN_G5  -to AD_DATA[0]
+set_location_assignment PIN_G5 -to AD_DATA[0]
 set_location_assignment PIN_R14 -to AD_DATA[1]
-set_location_assignment PIN_F2  -to AD_DATA[2]
-set_location_assignment PIN_F3  -to AD_DATA[3]
-set_location_assignment PIN_F1  -to AD_DATA[4]
+set_location_assignment PIN_F2 -to AD_DATA[2]
+set_location_assignment PIN_F3 -to AD_DATA[3]
+set_location_assignment PIN_F1 -to AD_DATA[4]
 set_location_assignment PIN_N11 -to AD_DATA[5]
-set_location_assignment PIN_G2  -to AD_DATA[6]
+set_location_assignment PIN_G2 -to AD_DATA[6]
 set_location_assignment PIN_T14 -to AD_DATA[7]
-set_location_assignment PIN_G1  -to AD_DATA[8]
+set_location_assignment PIN_G1 -to AD_DATA[8]
 set_location_assignment PIN_N13 -to AD_DATA[9]
-set_location_assignment PIN_N9  -to AD_DATA[10]
+set_location_assignment PIN_N9 -to AD_DATA[10]
 set_location_assignment PIN_R13 -to AD_DATA[11]
 set_location_assignment PIN_K10 -to AD_DATA[12]
 set_location_assignment PIN_T13 -to AD_DATA[13]
 set_location_assignment PIN_P11 -to AD_DATA[14]
 set_location_assignment PIN_M10 -to AD_DATA[15]
-set_location_assignment PIN_C2  -to AD_BUSY
-set_location_assignment PIN_D1  -to AD_FIRST_DATA
+set_location_assignment PIN_C2 -to AD_BUSY
+set_location_assignment PIN_D1 -to AD_FIRST_DATA
 set_location_assignment PIN_G11 -to AD_CS
-set_location_assignment PIN_B1  -to AD_RD
+set_location_assignment PIN_B1 -to AD_RD
 set_location_assignment PIN_N12 -to AD_RESET
-set_location_assignment PIN_F5  -to AD_CONVSTAB
+set_location_assignment PIN_F5 -to AD_CONVSTAB
 
 set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to AD_OS[0]
 set_instance_assignment -name CURRENT_STRENGTH_NEW "MAXIMUM CURRENT" -to AD_OS[1]
@@ -190,7 +190,7 @@ set_global_assignment -name USE_SIGNALTAP_FILE ../stp/stp1.stp
 set_global_assignment -name ENABLE_OCT_DONE OFF
 set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
 set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
-set_global_assignment -name USE_CONFIGURATION_DEVICE OFF
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
 set_global_assignment -name CRC_ERROR_OPEN_DRAIN OFF
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
@@ -210,4 +210,5 @@ set_global_assignment -name VERILOG_FILE ../src/top.v
 set_global_assignment -name QIP_FILE ../src/core/usb_pll.qip
 set_global_assignment -name CDF_FILE output_files/Chain1.cdf
 set_global_assignment -name SIGNALTAP_FILE ../stp/stp1.stp
+set_global_assignment -name CYCLONEIII_CONFIGURATION_DEVICE EPCS16
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

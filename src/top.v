@@ -110,20 +110,16 @@ module top
       .ad_ch8     (ad_ch_data[7])
    );
    
-   reg  [`AD_CHN_NBIT-1:0]  ad_chn;
    wire [`AD_DATA_NBIT-1:0] ad_cache_wdata;
    wire                     ad_cache_wr;
    wire [`AD_DATA_NBIT-1:0] ad_cache_rdata;
    wire                     ad_cache_switch;
-   always@(posedge mclk) begin
-      if(ad_cache_switch)
-         ad_chn <= cmdec_ad_chn;
-   end
    assign ad_cache_wr    = ad_ch_vd;
-   assign ad_cache_wdata = ad_ch_data[ad_chn];
+   assign ad_cache_wdata = ad_ch_data[cmdec_ad_chn];
 
    ad_cache u_ad_cache
    (
+      .en    (cmdex_ad_acq_en),
       .wclk  (ad_clk         ),
       .wr    (ad_cache_wr    ),
       .wdata (ad_cache_wdata ),
@@ -197,6 +193,8 @@ module top
    wire [`USB_DATA_NBIT-1:0]     cmdec_tx_data;
    wire                          cmdec_tx_eop ;
    wire [`BUFFER_BADDR_NBIT-1:0] cmdex_tx_baddr;
+   wire                          cmdex_ad_acq_en;
+   
    cmd_decode u_cmd_decode
    (
       .mclk     (mclk           ),
@@ -204,6 +202,7 @@ module top
       .ad_chn   (cmdec_ad_chn   ),
       .ad_data  (ad_cache_rdata ),
       .ad_switch(ad_cache_switch),
+      .ad_acq_en(cmdex_ad_acq_en),
       .rx_vd    (rx_cache_vd    ),
       .rx_data  (rx_cache_data  ),
       .rx_sop   (rx_cache_sop   ),
