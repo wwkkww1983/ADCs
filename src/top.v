@@ -21,6 +21,9 @@ module top
    // Clock Source
    CLK1,
    OE,
+   // SYNC
+   IN_SYNC,
+   OUT_SYNC,
    // AD7606
    AD_DATA,
    AD_BUSY,
@@ -46,7 +49,8 @@ module top
    ////////////////// PORT ////////////////////
    input                          CLK1; // 48MHz
    output                         OE;
-
+   input                          IN_SYNC;
+   output                         OUT_SYNC;
    output                         USB_XTALIN; // 24MHz
    input                          USB_FLAGB;  // EP2 Empty
    input                          USB_FLAGC;  // EP6 Full
@@ -110,20 +114,16 @@ module top
       .ad_ch8     (ad_ch_data[7])
    );
    
-   reg  [`AD_CHN_NBIT-1:0]  ad_chn;
    wire [`AD_DATA_NBIT-1:0] ad_cache_wdata;
    wire                     ad_cache_wr;
    wire [`AD_DATA_NBIT-1:0] ad_cache_rdata;
    wire                     ad_cache_switch;
-   always@(posedge mclk) begin
-      if(ad_cache_switch)
-         ad_chn <= cmdec_ad_chn;
-   end
    assign ad_cache_wr    = ad_ch_vd;
-   assign ad_cache_wdata = ad_ch_data[ad_chn];
+   assign ad_cache_wdata = ad_ch_data[cmdec_ad_chn];
 
    ad_cache u_ad_cache
    (
+      .en    (cmdex_ad_acq_en),
       .wclk  (ad_clk         ),
       .wr    (ad_cache_wr    ),
       .wdata (ad_cache_wdata ),
@@ -197,13 +197,17 @@ module top
    wire [`USB_DATA_NBIT-1:0]     cmdec_tx_data;
    wire                          cmdec_tx_eop ;
    wire [`BUFFER_BADDR_NBIT-1:0] cmdex_tx_baddr;
+   wire                          cmdex_ad_acq_en;
+   
    cmd_decode u_cmd_decode
    (
       .mclk     (mclk           ),
+      .sync     (IN_SYNC        ),
       .ad_rd    (cmdec_ad_rd    ),
       .ad_chn   (cmdec_ad_chn   ),
       .ad_data  (ad_cache_rdata ),
       .ad_switch(ad_cache_switch),
+      .ad_acq_en(cmdex_ad_acq_en),
       .rx_vd    (rx_cache_vd    ),
       .rx_data  (rx_cache_data  ),
       .rx_sop   (rx_cache_sop   ),
@@ -229,5 +233,26 @@ module top
       .in_rdaddress(tx_buffer_rdata),
       .out_rddata  (tx_cache_data  )
    );   
-
+   
+   ////////////////// SYNC OUT
+   reg  [7:0]  div;
+   reg  [7:0]  sync_cnt;
+   reg         OUT_SYNC;
+   always@(posedge mclk) begin   
+      if(div == 8'd239) begin
+         div <= 0;
+         if(sync_cnt == 8'd136) 
+            sync_cnt <= 0;
+         else
+            sync_cnt <= sync_cnt + 1'b1;
+      end
+      else 
+         div <= div + 1'b1;
+      
+      if(sync_cnt<8'd9)
+         OUT_SYNC <= `HIGH;
+      else
+         OUT_SYNC <= `LOW;
+   end
+   
 endmodule

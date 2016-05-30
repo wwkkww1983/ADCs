@@ -19,6 +19,7 @@
 /////////////////////////// MODULE //////////////////////////////
 module ad_cache
 (
+   en,
    wclk,
    wr,
    wdata,
@@ -29,6 +30,7 @@ module ad_cache
 );
 
    ////////////////// PORT ////////////////////
+   input                      en;
    input                      wclk;
    input                      wr;
    input  [`AD_DATA_NBIT-1:0] wdata;
@@ -43,13 +45,17 @@ module ad_cache
    reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;
    reg                          wswitch;
    always@(posedge wclk) begin
-      if(wr) begin
-         waddr <= waddr + 1'b1;
-         if(waddr == `AD_CHE_DATA_SIZE-1) begin
-            waddr <= 0;
-            wswitch <= ~wswitch;
+      if(en) begin
+         if(wr) begin
+            waddr <= waddr + 1'b1;
+            if(waddr == `AD_CHE_DATA_SIZE-1) begin
+               waddr <= 0;
+               wswitch <= ~wswitch;
+            end
          end
       end
+      else
+         waddr <= 0;
    end
    
    wire [`AD_CHE_ADDR_NBIT:0] buf_waddr;
