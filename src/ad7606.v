@@ -105,6 +105,7 @@ module ad7606(
    reg [`AD_DATA_NBIT-1:0] ad_ch7     ; //AD channel 7 data
    reg [`AD_DATA_NBIT-1:0] ad_ch8     ; //AD channel 8 data   
    reg                     ad_vd      ;
+   reg [8:0]               ad_sp_cnt  ; // 0 ~ 249
    
    always @(posedge clk) begin
       if (ad_reset==1'b1) begin 
@@ -122,14 +123,16 @@ module ad7606(
          ad_convstab<=1'b1;
          i<=0;
          ad_vd<=1'b0;
+         ad_sp_cnt <= 0;
       end      
       else begin
          ad_vd <= 1'b0;
+         ad_sp_cnt <= ad_sp_cnt + 1'b1;
          case(state)
          IDLE: begin
             ad_cs<=1'b1;
             ad_rd<=1'b1; 
-            ad_convstab<=1'b1; 
+            ad_convstab<=1'b1;
             if(i==20) begin
                i<=0;          
                state<=AD_CONV;
@@ -260,10 +263,13 @@ module ad7606(
              end
          end
          READ_DONE:begin
-            ad_rd<=1'b1;   
-            ad_cs<=1'b1;
-            state<=IDLE;
-            ad_vd<=1'b1;
+            if(ad_sp_cnt>=9'd249) begin
+               ad_sp_cnt <= 0;
+               ad_rd<=1'b1;   
+               ad_cs<=1'b1;
+               state<=IDLE;
+               ad_vd<=1'b1;
+            end
          end    
          default:  state<=IDLE;
          endcase   

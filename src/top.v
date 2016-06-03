@@ -23,7 +23,10 @@ module top
    OE,
    // SYNC
    IN_SYNC,
+   IN_SPCLK,
    OUT_SYNC,
+   OUT_SPCLK,
+   OUT_DATA,
    // AD7606
    AD_DATA,
    AD_BUSY,
@@ -49,18 +52,23 @@ module top
    ////////////////// PORT ////////////////////
    input                          CLK1; // 48MHz
    output                         OE;
-   input                          IN_SYNC;
-   output                         OUT_SYNC;
-   output                         USB_XTALIN; // 24MHz
-   input                          USB_FLAGB;  // EP2 Empty
-   input                          USB_FLAGC;  // EP6 Full
-   output                         USB_IFCLK;
-   inout  [`USB_DATA_NBIT-1:0]    USB_DB;
-   output                         USB_SLOE;
-   output                         USB_SLWR;
-   output                         USB_SLRD;
-   output                         USB_PKEND;
-   output [`USB_FIFOADR_NBIT-1:0] USB_FIFOADR;
+   
+   input                          IN_SYNC; // frame sync input
+   input                          IN_SPCLK; // sample clock input, 200KHz
+   output                         OUT_SYNC; // simulate frame sync output
+   output                         OUT_SPCLK;// simulate sample clock, 200KHz
+   output                         OUT_DATA; // simulate data
+   
+   output                         USB_XTALIN; // USB PHY CPU clock, 24MHz
+   input                          USB_FLAGB;  // USB PHY EP2 empty flag
+   input                          USB_FLAGC;  // USB PHY EP6 full flag
+   output                         USB_IFCLK;  // USB PHY IF clock
+   inout  [`USB_DATA_NBIT-1:0]    USB_DB;     // USB PHY data
+   output                         USB_SLOE;   // USB PHY sloe
+   output                         USB_SLWR;   // USB PHY slwr
+   output                         USB_SLRD;   // USB PHY slrd
+   output                         USB_PKEND;  // USB PHY pktend
+   output [`USB_FIFOADR_NBIT-1:0] USB_FIFOADR;// USB PHY fifoadr
 
    input  [`AD_DATA_NBIT-1:0]     AD_DATA;
    input                          AD_BUSY;
@@ -87,7 +95,7 @@ module top
 	);
 
 	assign mclk = ~USB_IFCLK;
-
+	
    ////////////////// AD7606 controller
    wire [`AD_DATA_NBIT-1:0]   ad_ch_data[`AD_CHN_NUM-1:0];
    wire                       ad_ch_vd;
@@ -114,16 +122,25 @@ module top
       .ad_ch8     (ad_ch_data[7])
    );
    
-   wire [`AD_DATA_NBIT-1:0] ad_cache_wdata;
-   wire                     ad_cache_wr;
+   reg  [`AD_DATA_NBIT-1:0] ad_cache_wdata;
+   reg                      ad_cache_wr;
    wire [`AD_DATA_NBIT-1:0] ad_cache_rdata;
    wire                     ad_cache_switch;
-   assign ad_cache_wr    = ad_ch_vd;
-   assign ad_cache_wdata = ad_ch_data[cmdec_ad_chn];
+   reg  [1:0]               p_sync;
+   reg  [1:0]               p_spclk;
+
+   always@(posedge ad_clk) begin
+      p_sync  <= {p_sync[0],IN_SYNC};   // double ff to avoid meta
+      p_spclk <= {p_spclk[0],IN_SPCLK}; // double ff to avoid meta
+      ad_cache_wr    <= ad_ch_vd;
+      ad_cache_wdata <= ad_ch_data[cmdec_ad_chn];
+   end
 
    ad_cache u_ad_cache
    (
       .en    (cmdex_ad_acq_en),
+      .sync  (p_sync[1]      ),
+      .spclk (p_spclk[1]     ),
       .wclk  (ad_clk         ),
       .wr    (ad_cache_wr    ),
       .wdata (ad_cache_wdata ),
@@ -235,13 +252,15 @@ module top
    );   
    
    ////////////////// SYNC OUT
-   reg  [7:0]  div;
+   reg  [8:0]  div;
    reg  [7:0]  sync_cnt;
    reg         OUT_SYNC;
-   always@(posedge mclk) begin   
-      if(div == 8'd239) begin
+   reg         OUT_SPCLK;
+   reg         OUT_DATA;
+   always@(posedge ad_clk) begin   
+      if(div == 9'd499) begin // Sample rate - 50MHz/500 = 100KHz
          div <= 0;
-         if(sync_cnt == 8'd136) 
+         if(sync_cnt == 8'd136) // 137 samples in one frame sync cycle
             sync_cnt <= 0;
          else
             sync_cnt <= sync_cnt + 1'b1;
@@ -249,10 +268,23 @@ module top
       else 
          div <= div + 1'b1;
       
+      // sync: 0~8 HIGH; 9~136 LOW
       if(sync_cnt<8'd9)
          OUT_SYNC <= `HIGH;
       else
          OUT_SYNC <= `LOW;
+         
+      // sample clock
+      if(div<8'd249)
+         OUT_SPCLK <= `HIGH;
+      else
+         OUT_SPCLK <= `LOW;
+      
+      // data: 0~17 +3.3V; 18~136 0V
+      if(sync_cnt<8'd18) 
+         OUT_DATA <= `HIGH;
+      else
+         OUT_DATA <= `LOW;
    end
    
 endmodule

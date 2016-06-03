@@ -167,9 +167,7 @@ module cmd_decode
             if(ad_switch) begin
             	tx_adc_cnt <= tx_adc_cnt + 1'b1;
             end
-            //ad_acq_en <= `HIGH;
-            if(p_sync[2:1]==2'b01)
-               ad_acq_en <= `HIGH;
+            ad_acq_en <= `HIGH;
             ad_chn    <= rx_ch_addr[`AD_CHN_NBIT-1:0];
          end
          `MSG_TYPE_STOP: begin
