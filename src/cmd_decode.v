@@ -260,19 +260,22 @@ module cmd_decode
             else if(tx_cnt==`AD_CHE_DATA_SIZE + `AD_CNT_NWORD) begin
             	p_adc_cnt <= tx_adc_cnt<<`USB_DATA_NBIT;
             	tx_data   <= {tx_adc_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],tx_adc_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
+            	ad_rd     <= `HIGH;
             end
             else if(tx_cnt<`AD_CHE_DATA_SIZE + `AD_CNT_NWORD && tx_cnt>`AD_CHE_DATA_SIZE) begin
             	p_adc_cnt <= p_adc_cnt<<`USB_DATA_NBIT;
             	tx_data   <= {p_adc_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],p_adc_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
+         	   ad_rd  <= `HIGH;
             end
             else begin
-               ad_rd   <= `HIGH;
+               if(tx_cnt>`USB_ADDR_NBIT'd3)
+                  ad_rd   <= `HIGH;
                tx_data <= {ad_data[`USB_DATA_NBIT/2-1:0],ad_data[`USB_DATA_NBIT-1:`USB_DATA_NBIT/2]};
             end
             tx_cnt      <= tx_cnt - 1'b1;
-            if(tx_cnt==0) begin
-               ad_rd <= `LOW;
-               tx_st <= `ST_MSG_END;
+            if(tx_cnt==`USB_ADDR_NBIT'd1) begin // 1 ~ AD_CHE_DATA_SIZE
+               tx_cnt <= {`USB_ADDR_NBIT{1'b1}};
+               tx_st  <= `ST_MSG_END;
             end
          end
          `ST_MSG_END: begin

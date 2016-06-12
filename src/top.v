@@ -238,8 +238,8 @@ module top
 
    ////////////////// TX BUFFER
    
-   wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_rdata;
-   assign tx_buffer_rdata = {cmdex_tx_baddr,tx_cache_addr};
+   wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_raddr;
+   assign tx_buffer_raddr = {cmdex_tx_baddr,tx_cache_addr};
 
    buffered_ram#(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,"./tx_buf_2048x16.mif")
    tx_buffer(
@@ -247,20 +247,20 @@ module top
       .in_wren     (cmdec_tx_vd    ),
       .in_wraddress(cmdec_tx_addr  ),
       .in_wrdata   (cmdec_tx_data  ),
-      .in_rdaddress(tx_buffer_rdata),
+      .in_rdaddress(tx_buffer_raddr),
       .out_rddata  (tx_cache_data  )
    );   
    
    ////////////////// SYNC OUT
    reg  [8:0]  div;
-   reg  [7:0]  sync_cnt;
+   reg  [9:0]  sync_cnt;
    reg         OUT_SYNC;
    reg         OUT_SPCLK;
    reg         OUT_DATA;
    always@(posedge ad_clk) begin   
-      if(div == 9'd499) begin // Sample rate - 50MHz/500 = 100KHz
+      if(div == 9'd249) begin // Sample rate - 50MHz/500 = 100KHz
          div <= 0;
-         if(sync_cnt == 8'd136) // 137 samples in one frame sync cycle
+         if(sync_cnt == 10'd511) // 256X2 samples(200MSPS) in one frame sync cycle
             sync_cnt <= 0;
          else
             sync_cnt <= sync_cnt + 1'b1;
@@ -269,19 +269,19 @@ module top
          div <= div + 1'b1;
       
       // sync: 0~8 HIGH; 9~136 LOW
-      if(sync_cnt<8'd9)
+      if(sync_cnt<10'd9)
          OUT_SYNC <= `HIGH;
       else
          OUT_SYNC <= `LOW;
          
       // sample clock
-      if(div<8'd249)
+      if(div<8'd124)
          OUT_SPCLK <= `HIGH;
       else
          OUT_SPCLK <= `LOW;
       
-      // data: 0~17 +3.3V; 18~136 0V
-      if(sync_cnt<8'd18) 
+      // data: 0~127 +3.3V; 128~255 0V
+      if(sync_cnt<10'd255) 
          OUT_DATA <= `HIGH;
       else
          OUT_DATA <= `LOW;

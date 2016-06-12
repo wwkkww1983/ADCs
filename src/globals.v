@@ -43,12 +43,12 @@
    `define AD_CHN_NBIT         3   // channel 
    `define AD_CHN_NUM          8   // channel number
    `define AD_CHE_ADDR_NBIT    `USB_ADDR_NBIT   // cache buffer address width 
-   `define AD_CHE_DATA_SIZE    `USB_ADDR_NBIT'd246 // cache buffer data size
-	`define AD_CNT_NWORD        `USB_ADDR_NBIT'd3
+   `define AD_CHE_DATA_SIZE    `USB_ADDR_NBIT'd247 // cache buffer data size
+   `define AD_CNT_NWORD        `USB_ADDR_NBIT'd3
    `define AD_CNT_NBIT         `AD_CNT_NWORD*`AD_DATA_NBIT
    `define AD_SP_NBIT          9
    `define AD_SP_NUM           `AD_SP_NBIT'd256
-   `define AD_SP_START_IDX     `AD_SP_NBIT'd2
+   `define AD_SP_START_IDX     `AD_SP_NBIT'd16
    
    ////////////////// COMMUNICATION, BYTE INVERTED
    `define MSG_STR_NBIT        `USB_DATA_NBIT
