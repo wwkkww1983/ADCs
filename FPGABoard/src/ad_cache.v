@@ -32,16 +32,16 @@ module ad_cache
 );
 
    ////////////////// PORT ////////////////////
-   input                      en;
-   input                      sync;
-   input                      spclk;
-   input                      wclk;
-   input                      wr;
-   input  [`AD_DATA_NBIT-1:0] wdata;
-   input                      rclk;
-   input                      rd;
-   output [`AD_DATA_NBIT-1:0] rdata;
-   output                     switch;
+   input                       en;
+   input                       sync;
+   input                       spclk;
+   input                       wclk;
+   input                       wr;
+   input  [`AD_DATA_NBIT-1:0]  wdata;
+   input                       rclk;
+   input                       rd;
+   output [`USB_DATA_NBIT-1:0] rdata;
+   output                      switch;
 
    ////////////////// ARCH ////////////////////
 
@@ -50,7 +50,7 @@ module ad_cache
    reg                          wswitch;
    reg                          buf_wr;
    reg  [`AD_CHE_ADDR_NBIT:0]   buf_waddr;
-   reg  [`AD_DATA_NBIT-1:0]     buf_wdata;
+   reg  [`USB_DATA_NBIT*2-1:0]  buf_wdata;
    reg                          prev_sync;
    reg                          prev_spclk;
    reg  [`AD_SP_NBIT-1:0]       spwr_cnt;
@@ -61,7 +61,7 @@ module ad_cache
       prev_spclk<= spclk;
       buf_wr    <= `LOW;
       buf_waddr <= {wswitch,waddr};
-      buf_wdata <= wdata;
+      buf_wdata <= {{`USB_DATA_NBIT*2-`AD_DATA_NBIT{wdata[`AD_DATA_NBIT-1]}},wdata};
       if(en) begin
          if(wr&&(spclk_cnt>=`AD_SP_START_IDX)&&(spwr_cnt<`AD_SP_NUM)) begin
             buf_wr <= `HIGH;
@@ -92,7 +92,8 @@ module ad_cache
    end
    
    ////////////////// PING PANG BUFFER   
-   buffered_ram_tdp #(`AD_CHE_ADDR_NBIT+1,`AD_DATA_NBIT)
+   buffered_ram_tdp #(`AD_CHE_ADDR_NBIT+1,`USB_DATA_NBIT*2,
+                      `AD_CHE_ADDR_NBIT+2,`USB_DATA_NBIT)
    pingpang_cache
    (
       .a_inclk     (wclk),
@@ -110,8 +111,8 @@ module ad_cache
    ////////////////// READ
    reg  [2:0]                   pp_wswitch;
    reg                          switch;
-   reg  [`AD_CHE_ADDR_NBIT-1:0] raddr;
-   wire [`AD_CHE_ADDR_NBIT:0]   buf_raddr;
+   reg  [`AD_CHE_ADDR_NBIT:0]   raddr;
+   wire [`AD_CHE_ADDR_NBIT+1:0] buf_raddr;
    assign buf_raddr = {~pp_wswitch[2],raddr};
    
    always@(posedge rclk) begin

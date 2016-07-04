@@ -39,7 +39,7 @@
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    
    ////////////////// AD7606
-   `define AD_DATA_NBIT        `USB_DATA_NBIT
+   `define AD_DATA_NBIT        18
    `define AD_CHN_NBIT         3   // channel 
    `define AD_CHN_NUM          8   // channel number
    `define AD_CHE_ADDR_NBIT    `USB_ADDR_NBIT   // cache buffer address width 

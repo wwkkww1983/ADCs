@@ -43,7 +43,7 @@ module cmd_decode
    input                           mclk;   // main clock 48MHz
    input                           sync;
    output                          ad_rd;
-   input  [`AD_DATA_NBIT-1:0]      ad_data;
+   input  [`USB_DATA_NBIT-1:0]     ad_data;
    input                           ad_switch;
    output [`AD_CHN_NBIT-1:0]       ad_chn;
    output                          ad_acq_en;

@@ -20,6 +20,7 @@ module top
 (
    // Clock Source
    CLK1,
+	CLK2,
    OE,
    // SYNC
    IN_SYNC,
@@ -27,15 +28,10 @@ module top
    OUT_SYNC,
    OUT_SPCLK,
    OUT_DATA,
-   // AD7606
-   AD_DATA,
-   AD_BUSY,
-   AD_FIRST_DATA,
-   AD_OS,
-   AD_CS,
-   AD_RD,
-   AD_RESET,
-   AD_CONVSTAB,
+   // LTC2387
+   OUT_AD_CLK,
+   AD_DB,
+   IN_AD_CLK,
    // USB
    USB_XTALIN,
    USB_FLAGB,
@@ -51,6 +47,7 @@ module top
 
    ////////////////// PORT ////////////////////
    input                          CLK1; // 48MHz
+	input								    CLK2; // 50MHz
    output                         OE;
    
    input                          IN_SYNC; // frame sync input
@@ -70,14 +67,9 @@ module top
    output                         USB_PKEND;  // USB PHY pktend
    output [`USB_FIFOADR_NBIT-1:0] USB_FIFOADR;// USB PHY fifoadr
 
-   input  [`AD_DATA_NBIT-1:0]     AD_DATA;
-   input                          AD_BUSY;
-   input                          AD_FIRST_DATA;
-   output [2:0]                   AD_OS;
-   output                         AD_CS;
-   output                         AD_RD;
-   output                         AD_RESET;
-   output                         AD_CONVSTAB;
+   output                         OUT_AD_CLK; // clock output for LT2387
+   input  [`AD_DATA_NBIT-1:0]     AD_DB;      // LT2387 data input
+   input                          IN_AD_CLK;  // LT2387 data valid input
 
    ////////////////// ARCH ////////////////////
 
@@ -86,54 +78,35 @@ module top
    ////////////////// Clock Generation
 
 	wire   mclk;   // 48MHz
-   wire   ad_clk; // 50MHz
    usb_pll	usb_pll_u(
    	.inclk0 (CLK1      ),
    	.c0     (USB_XTALIN),
    	.c1     (USB_IFCLK ),
-   	.c2     (ad_clk)
+   	.c2     ()
 	);
-
+	
 	assign mclk = ~USB_IFCLK;
 	
-   ////////////////// AD7606 controller
-   wire [`AD_DATA_NBIT-1:0]   ad_ch_data[`AD_CHN_NUM-1:0];
-   wire                       ad_ch_vd;
+   wire   OUT_AD_CLK; // 15MHz
+   wire   clk_50m;
+   adc_pll adc_pll_u(
+   	.inclk0(CLK2),
+   	.c0    (OUT_AD_CLK),
+   	.c1    (clk_50m));	
+	
+   ////////////////// LTC2387 controller
    
-   ad7606 u_ad7606(
-      .clk        (ad_clk       ),
-      .rst_n      (`HIGH        ),
-      .ad_data    (AD_DATA      ),
-      .ad_busy    (AD_BUSY      ),
-      .first_data (AD_FIRST_DATA),
-      .ad_os      (AD_OS        ),
-      .ad_cs      (AD_CS        ),
-      .ad_rd      (AD_RD        ),
-      .ad_reset   (AD_RESET     ),
-      .ad_convstab(AD_CONVSTAB  ),
-      .ad_vd      (ad_ch_vd     ),
-      .ad_ch1     (ad_ch_data[0]),
-      .ad_ch2     (ad_ch_data[1]),
-      .ad_ch3     (ad_ch_data[2]),
-      .ad_ch4     (ad_ch_data[3]),
-      .ad_ch5     (ad_ch_data[4]),
-      .ad_ch6     (ad_ch_data[5]),
-      .ad_ch7     (ad_ch_data[6]),
-      .ad_ch8     (ad_ch_data[7])
-   );
-   
-   reg  [`AD_DATA_NBIT-1:0] ad_cache_wdata;
-   reg                      ad_cache_wr;
-   wire [`AD_DATA_NBIT-1:0] ad_cache_rdata;
-   wire                     ad_cache_switch;
-   reg  [1:0]               p_sync;
-   reg  [1:0]               p_spclk;
+   reg  [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
+   reg                       ad_cache_wr;
+   wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
+   wire                      ad_cache_switch;
+   reg  [1:0]                p_sync;
+   reg  [1:0]                p_spclk;
+	reg  [1:0]					  p_IN_AD_CLK;
 
-   always@(posedge ad_clk) begin
-      p_sync  <= {p_sync[0],IN_SYNC};   // double ff to avoid meta
-      p_spclk <= {p_spclk[0],IN_SPCLK}; // double ff to avoid meta
-      ad_cache_wr    <= ad_ch_vd;
-      ad_cache_wdata <= ad_ch_data[cmdec_ad_chn];
+   always@(posedge IN_AD_CLK) begin
+      p_sync  <= {p_sync[0],OUT_SYNC};   // double ff to avoid meta
+      p_spclk <= {p_spclk[0],OUT_SPCLK}; // double ff to avoid meta
    end
 
    ad_cache u_ad_cache
@@ -141,9 +114,9 @@ module top
       .en    (cmdex_ad_acq_en),
       .sync  (p_sync[1]      ),
       .spclk (p_spclk[1]     ),
-      .wclk  (ad_clk         ),
-      .wr    (ad_cache_wr    ),
-      .wdata (ad_cache_wdata ),
+      .wclk  (IN_AD_CLK      ),
+      .wr    (`HIGH          ),
+      .wdata (AD_DB          ),
       .rclk  (mclk           ),
       .rd    (cmdec_ad_rd    ),
       .rdata (ad_cache_rdata ),
@@ -257,7 +230,7 @@ module top
    reg         OUT_SYNC;
    reg         OUT_SPCLK;
    reg         OUT_DATA;
-   always@(posedge ad_clk) begin   
+   always@(posedge clk_50m) begin   
       if(div == 9'd249) begin // Sample rate - 50MHz/500 = 100KHz
          div <= 0;
          if(sync_cnt == 10'd511) // 256X2 samples(200MSPS) in one frame sync cycle
