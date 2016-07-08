@@ -279,12 +279,9 @@ module cmd_decode
             end
          end
          `ST_MSG_END: begin
-            tx_cnt     <= 0;
-            if(tx_cnt=={`USB_ADDR_NBIT{1'b1}})
-               tx_data <= {`MSG_END_N,`MSG_END_R};
-            else
-               tx_data <= 0; // clean TX BUFFER
-            tx_vd       <= `HIGH;
+            tx_cnt  <= 0;
+            tx_data <= 0; // clean TX BUFFER
+            tx_vd   <= `HIGH;
             tx_buf_addr <= tx_buf_addr + 1'b1;
             if(tx_buf_addr=={`USB_ADDR_NBIT{1'b1}}) begin
                tx_vd   <= `LOW;

@@ -76,47 +76,64 @@ module top
    assign OE = `HIGH;
 
    ////////////////// Clock Generation
-
-	wire   mclk;   // 48MHz
+   
+   // PLL for USB
+	wire   usb_clk;   // 48MHz
    usb_pll	usb_pll_u(
    	.inclk0 (CLK1      ),
    	.c0     (USB_XTALIN),
-   	.c1     (USB_IFCLK ),
-   	.c2     ()
+   	.c1     (USB_IFCLK )
 	);
 	
-	assign mclk = ~USB_IFCLK;
+	assign usb_clk = ~USB_IFCLK;
 	
+	// PLL for ADC
    wire   OUT_AD_CLK; // 15MHz
-   wire   clk_50m;
+   wire   mclk;       // 100MHz
    adc_pll adc_pll_u(
    	.inclk0(CLK2),
    	.c0    (OUT_AD_CLK),
-   	.c1    (clk_50m));	
+   	.c1    (mclk));	
 	
    ////////////////// LTC2387 controller
    
-   reg  [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
+   wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    reg                       ad_cache_wr;
    wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
    wire                      ad_cache_switch;
    reg  [1:0]                p_sync;
    reg  [1:0]                p_spclk;
-	reg  [1:0]					  p_IN_AD_CLK;
+	wire                      ad_cache_wclk;
 
-   always@(posedge IN_AD_CLK) begin
-      p_sync  <= {p_sync[0],OUT_SYNC};   // double ff to avoid meta
+`ifdef DEBUG
+   reg  [`AD_DATA_NBIT-1:0]  wdata;
+	
+	assign ad_cache_wclk  = OUT_AD_CLK;
+	assign ad_cache_wdata = wdata;
+
+   always@(posedge ad_cache_wclk) begin
+      p_sync  <= {p_sync[0],OUT_SYNC};  // double ff to avoid meta
       p_spclk <= {p_spclk[0],OUT_SPCLK}; // double ff to avoid meta
+      wdata   <= wdata + 1'b1;
    end
+`else
+	assign ad_cache_wclk  = IN_AD_CLK;
+	assign ad_cache_wdata = AD_DB;
 
+   always@(posedge ad_cache_wclk) begin
+      p_sync  <= {p_sync[0],IN_SYNC};  // double ff to avoid meta
+      p_spclk <= {p_spclk[0],IN_SPCLK}; // double ff to avoid meta
+   end
+`endif
+   
    ad_cache u_ad_cache
    (
       .en    (cmdex_ad_acq_en),
       .sync  (p_sync[1]      ),
       .spclk (p_spclk[1]     ),
-      .wclk  (IN_AD_CLK      ),
+      .wclk  (ad_cache_wclk  ),
       .wr    (`HIGH          ),
-      .wdata (AD_DB          ),
+      .wdata (ad_cache_wdata ),
       .rclk  (mclk           ),
       .rd    (cmdec_ad_rd    ),
       .rdata (ad_cache_rdata ),
@@ -149,34 +166,34 @@ module top
 
 
    // RX Data From USB PHY
-   wire                         rx_cache_vd  ;
-   wire [`USB_DATA_NBIT-1:0]    rx_cache_data;
-   wire                         rx_cache_sop ;
-   wire                         rx_cache_eop ;
-   // Send Data to USB PHY
-   wire [`USB_ADDR_NBIT-1:0]    tx_cache_addr;
-   wire [`USB_DATA_NBIT-1:0]    tx_cache_data;
+   wire                      usb_rx_cache_vd  ;
+   wire [`USB_DATA_NBIT-1:0] usb_rx_cache_data;
+   wire                      usb_rx_cache_sop ;
+   wire                      usb_rx_cache_eop ;
+   // Send Data to USB PHY   
+   wire [`USB_ADDR_NBIT-1:0] usb_tx_cache_addr;
+   wire [`USB_DATA_NBIT-1:0] usb_tx_cache_data;
 
    usb_slavefifo u_usb_slavefifo
    (
-      .ifclk        (mclk            ),
-      .sloe         (usb_ctrl_sloe   ),
-      .slrd         (usb_ctrl_slrd   ),
-      .f_empty      (usb_ctrl_empty  ),
-      .rdata        (usb_ctrl_rdata  ),
-      .slwr         (usb_ctrl_slwr   ),
-      .wen          (usb_ctrl_wen    ),
-      .wdata        (usb_ctrl_wdata  ),
-      .f_full       (usb_ctrl_full   ),
-      .pkend        (usb_ctrl_pkend  ),
-      .fifoaddr     (usb_ctrl_fifoadr),
-      .rx_cache_vd  (rx_cache_vd     ),
-      .rx_cache_data(rx_cache_data   ),
-      .rx_cache_sop (rx_cache_sop    ),
-      .rx_cache_eop (rx_cache_eop    ),
-      .tx_cache_sop (cmdec_tx_eop    ),
-      .tx_cache_addr(tx_cache_addr   ),
-      .tx_cache_data(tx_cache_data   )
+      .ifclk        (usb_clk          ),
+      .sloe         (usb_ctrl_sloe    ),
+      .slrd         (usb_ctrl_slrd    ),
+      .f_empty      (usb_ctrl_empty   ),
+      .rdata        (usb_ctrl_rdata   ),
+      .slwr         (usb_ctrl_slwr    ),
+      .wen          (usb_ctrl_wen     ),
+      .wdata        (usb_ctrl_wdata   ),
+      .f_full       (usb_ctrl_full    ),
+      .pkend        (usb_ctrl_pkend   ),
+      .fifoaddr     (usb_ctrl_fifoadr ),
+      .rx_cache_vd  (usb_rx_cache_vd  ),
+      .rx_cache_data(usb_rx_cache_data),
+      .rx_cache_sop (usb_rx_cache_sop ),
+      .rx_cache_eop (usb_rx_cache_eop ),
+      .tx_cache_sop (cmdec_tx_eop     ),
+      .tx_cache_addr(usb_tx_cache_addr),
+      .tx_cache_data(usb_tx_cache_data)
    );
    
    ////////////////// command decode
@@ -191,46 +208,62 @@ module top
    
    cmd_decode u_cmd_decode
    (
-      .mclk     (mclk           ),
-      .sync     (IN_SYNC        ),
-      .ad_rd    (cmdec_ad_rd    ),
-      .ad_chn   (cmdec_ad_chn   ),
-      .ad_data  (ad_cache_rdata ),
-      .ad_switch(ad_cache_switch),
-      .ad_acq_en(cmdex_ad_acq_en),
-      .rx_vd    (rx_cache_vd    ),
-      .rx_data  (rx_cache_data  ),
-      .rx_sop   (rx_cache_sop   ),
-      .rx_eop   (rx_cache_eop   ),
-      .tx_vd    (cmdec_tx_vd    ),
-      .tx_addr  (cmdec_tx_addr  ),
-      .tx_data  (cmdec_tx_data  ),
-      .tx_eop   (cmdec_tx_eop   ),
-      .tx_baddr (cmdex_tx_baddr )
+      .mclk     (mclk             ),
+      .sync     (IN_SYNC          ),
+      .ad_rd    (cmdec_ad_rd      ),
+      .ad_chn   (cmdec_ad_chn     ),
+      .ad_data  (ad_cache_rdata   ),
+      .ad_switch(ad_cache_switch  ),
+      .ad_acq_en(cmdex_ad_acq_en  ),
+      .rx_vd    (usb_rx_cache_vd  ),
+      .rx_data  (usb_rx_cache_data),
+      .rx_sop   (usb_rx_cache_sop ),
+      .rx_eop   (usb_rx_cache_eop ),
+      .tx_vd    (cmdec_tx_vd      ),
+      .tx_addr  (cmdec_tx_addr    ),
+      .tx_data  (cmdec_tx_data    ),
+      .tx_eop   (cmdec_tx_eop     ),
+      .tx_baddr (cmdex_tx_baddr   )
    );
 
    ////////////////// TX BUFFER
    
    wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_raddr;
-   assign tx_buffer_raddr = {cmdex_tx_baddr,tx_cache_addr};
+   assign tx_buffer_raddr = {cmdex_tx_baddr,usb_tx_cache_addr};
 
-   buffered_ram#(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,"./tx_buf_2048x16.mif")
-   tx_buffer(
-      .inclk       (mclk           ),
-      .in_wren     (cmdec_tx_vd    ),
-      .in_wraddress(cmdec_tx_addr  ),
-      .in_wrdata   (cmdec_tx_data  ),
-      .in_rdaddress(tx_buffer_raddr),
-      .out_rddata  (tx_cache_data  )
-   );   
-   
+//   buffered_ram #(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,"./tx_buf_2048x16.mif")
+//   tx_buffer(
+//      .inclk       (mclk             ),
+//      .in_wren     (cmdec_tx_vd      ),
+//      .in_wraddress(cmdec_tx_addr    ),
+//      .in_wrdata   (cmdec_tx_data    ),
+//      .in_rdaddress(tx_buffer_raddr  ),
+//      .out_rddata  (usb_tx_cache_data)
+//   );   
+
+   buffered_ram_tdp #(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
+                      `BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
+                      "./tx_buf_2048x16.mif")
+   tx_buffer (
+      .a_inclk     (mclk           ),
+      .a_in_wren   (cmdec_tx_vd    ),
+      .a_in_address(cmdec_tx_addr  ),
+      .a_in_wrdata (cmdec_tx_data  ),
+      .a_out_rddata(),
+      .b_inclk     (usb_clk        ),
+      .b_in_wren   (`LOW           ),
+      .b_in_address(tx_buffer_raddr),
+      .b_in_wrdata (0),
+      .b_out_rddata(usb_tx_cache_data)
+   );
+      
    ////////////////// SYNC OUT
    reg  [8:0]  div;
    reg  [9:0]  sync_cnt;
    reg         OUT_SYNC;
    reg         OUT_SPCLK;
    reg         OUT_DATA;
-   always@(posedge clk_50m) begin   
+   always@(posedge mclk) begin   
       if(div == 9'd249) begin // Sample rate - 50MHz/500 = 100KHz
          div <= 0;
          if(sync_cnt == 10'd511) // 256X2 samples(200MSPS) in one frame sync cycle

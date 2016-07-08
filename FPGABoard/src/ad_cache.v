@@ -46,10 +46,10 @@ module ad_cache
    ////////////////// ARCH ////////////////////
 
    ////////////////// WRITE   
-   reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;
+   reg  [`AD_CHE_ADDR_NBIT-2:0] waddr;
    reg                          wswitch;
    reg                          buf_wr;
-   reg  [`AD_CHE_ADDR_NBIT:0]   buf_waddr;
+   reg  [`AD_CHE_ADDR_NBIT-1:0] buf_waddr;
    reg  [`USB_DATA_NBIT*2-1:0]  buf_wdata;
    reg                          prev_sync;
    reg                          prev_spclk;
@@ -78,7 +78,7 @@ module ad_cache
          
          if(buf_wr) begin
             waddr <= waddr + 1'b1;
-            if(waddr == `AD_CHE_DATA_SIZE-1) begin
+            if(waddr == `AD_CHE_DATA_SIZE/2-1) begin
                waddr <= 0;
                wswitch <= ~wswitch;
             end
@@ -92,8 +92,8 @@ module ad_cache
    end
    
    ////////////////// PING PANG BUFFER   
-   buffered_ram_tdp #(`AD_CHE_ADDR_NBIT+1,`USB_DATA_NBIT*2,
-                      `AD_CHE_ADDR_NBIT+2,`USB_DATA_NBIT)
+   buffered_ram_tdp #(`AD_CHE_ADDR_NBIT,`USB_DATA_NBIT*2,
+                      `AD_CHE_ADDR_NBIT+1,`USB_DATA_NBIT)
    pingpang_cache
    (
       .a_inclk     (wclk),
@@ -111,8 +111,8 @@ module ad_cache
    ////////////////// READ
    reg  [2:0]                   pp_wswitch;
    reg                          switch;
-   reg  [`AD_CHE_ADDR_NBIT:0]   raddr;
-   wire [`AD_CHE_ADDR_NBIT+1:0] buf_raddr;
+   reg  [`AD_CHE_ADDR_NBIT-1:0] raddr;
+   wire [`AD_CHE_ADDR_NBIT:0]   buf_raddr;
    assign buf_raddr = {~pp_wswitch[2],raddr};
    
    always@(posedge rclk) begin

@@ -116,23 +116,25 @@ module buffered_ram_tdp
    );
 
    ///////////////// PARAMETER ////////////////
-   parameter p_waddresswidth=4;               // # of address bit
-   parameter p_wdatawidth   =16;              // # of data bit
-   parameter p_raddresswidth=p_waddresswidth;
-   parameter p_rdatawidth   =p_wdatawidth;
+   parameter p_addresswidth_a = 4;               // # of address bit
+   parameter p_datawidth_a    = 16;              // # of data bit
+   parameter p_addresswidth_b = p_addresswidth_a;
+   parameter p_datawidth_b    = p_datawidth_a;
+   parameter p_init_file      = "UNUSED";
+   parameter p_device_family  = "Cyclone IV";
 
    ////////////////// PORT ////////////////////
-   input                        a_inclk;
-   input                        a_in_wren;
-   input  [p_waddresswidth-1:0] a_in_address;
-   input  [p_wdatawidth-1:0]    a_in_wrdata;
-   output [p_rdatawidth-1:0]    a_out_rddata;
+   input                         a_inclk;
+   input                         a_in_wren;
+   input  [p_addresswidth_a-1:0] a_in_address;
+   input  [p_datawidth_a-1:0]    a_in_wrdata;
+   output [p_datawidth_a-1:0]    a_out_rddata;
    
-   input                        b_inclk;
-   input                        b_in_wren;
-   input  [p_waddresswidth-1:0] b_in_address;
-   input  [p_wdatawidth-1:0]    b_in_wrdata;
-   output [p_rdatawidth-1:0]    b_out_rddata;
+   input                         b_inclk;
+   input                         b_in_wren;
+   input  [p_addresswidth_b-1:0] b_in_address;
+   input  [p_datawidth_b-1:0]    b_in_wrdata;
+   output [p_datawidth_b-1:0]    b_out_rddata;
 
    ////////////////// ARCH ////////////////////
    altsyncram buffered_ram_altsyncram
@@ -163,27 +165,28 @@ module buffered_ram_tdp
    );
 
    defparam
-      buffered_ram_altsyncram.address_aclr_b = "NONE",
-      buffered_ram_altsyncram.address_reg_b = "CLOCK1",
-      buffered_ram_altsyncram.clock_enable_input_a = "BYPASS",
-      buffered_ram_altsyncram.clock_enable_input_b = "BYPASS",
-      buffered_ram_altsyncram.clock_enable_output_b = "BYPASS",
-      buffered_ram_altsyncram.intended_device_family = "Cyclone III",
+      buffered_ram_altsyncram.address_aclr_b                     = "NONE",
+      buffered_ram_altsyncram.address_reg_b                      = "CLOCK1",
+      buffered_ram_altsyncram.clock_enable_input_a               = "BYPASS",
+      buffered_ram_altsyncram.clock_enable_input_b               = "BYPASS",
+      buffered_ram_altsyncram.clock_enable_output_b              = "BYPASS",
+      buffered_ram_altsyncram.intended_device_family             = p_device_family,
       //buffered_ram_altsyncram.read_during_write_mode_mixed_ports = "OLD_DATA",
-      buffered_ram_altsyncram.lpm_type = "altsyncram",
-      buffered_ram_altsyncram.numwords_a = 2**p_waddresswidth,
-      buffered_ram_altsyncram.numwords_b = 2**p_raddresswidth,
+      buffered_ram_altsyncram.lpm_type                           = "altsyncram",
+      buffered_ram_altsyncram.numwords_a                         = 2**p_addresswidth_a,
+      buffered_ram_altsyncram.numwords_b                         = 2**p_addresswidth_b,
       buffered_ram_altsyncram.read_during_write_mode_mixed_ports = "DONT_CARE",
-      buffered_ram_altsyncram.operation_mode = "BIDIR_DUAL_PORT",
-      buffered_ram_altsyncram.outdata_aclr_b = "NONE",
-      buffered_ram_altsyncram.outdata_reg_a = "CLOCK0",
-      buffered_ram_altsyncram.outdata_reg_b = "CLOCK1",
-      buffered_ram_altsyncram.power_up_uninitialized = "FALSE",
-      buffered_ram_altsyncram.widthad_a = p_waddresswidth,
-      buffered_ram_altsyncram.widthad_b = p_raddresswidth,
-      buffered_ram_altsyncram.width_a = p_wdatawidth,
-      buffered_ram_altsyncram.width_b = p_rdatawidth,
-      buffered_ram_altsyncram.width_byteena_a = 1,
-      buffered_ram_altsyncram.ram_block_type = "M9K";
-
+      buffered_ram_altsyncram.operation_mode                     = "BIDIR_DUAL_PORT",
+      buffered_ram_altsyncram.outdata_aclr_b                     = "NONE",
+      buffered_ram_altsyncram.outdata_reg_a                      = "CLOCK0",
+      buffered_ram_altsyncram.outdata_reg_b                      = "CLOCK1",
+      buffered_ram_altsyncram.power_up_uninitialized             = "FALSE",
+      buffered_ram_altsyncram.widthad_a                          = p_addresswidth_a,
+      buffered_ram_altsyncram.widthad_b                          = p_addresswidth_b,
+      buffered_ram_altsyncram.width_a                            = p_datawidth_a,
+      buffered_ram_altsyncram.width_b                            = p_datawidth_b,
+      buffered_ram_altsyncram.width_byteena_a                    = 1,
+      buffered_ram_altsyncram.ram_block_type                     = "M9K",
+      buffered_ram_altsyncram.init_file                          = p_init_file;
+      
 endmodule
