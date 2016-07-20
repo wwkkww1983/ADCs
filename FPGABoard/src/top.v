@@ -101,38 +101,44 @@ module top
    reg                       ad_cache_wr;
    wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
    wire                      ad_cache_switch;
-   reg  [1:0]                p_sync;
-   reg  [1:0]                p_spclk;
+   wire                      ad_cache_sync;
+   wire                      ad_cache_spclk;
 	wire                      ad_cache_wclk;
+	reg  [7:0]                sd_cnt;
 
 `ifdef DEBUG
    reg  [`AD_DATA_NBIT-1:0]  wdata;
 	
+	assign ad_cache_sync  = OUT_SYNC;
+	assign ad_cache_spclk = OUT_SPCLK;
 	assign ad_cache_wclk  = OUT_AD_CLK;
 	assign ad_cache_wdata = wdata;
 
    always@(posedge ad_cache_wclk) begin
-      p_sync  <= {p_sync[0],OUT_SYNC};  // double ff to avoid meta
-      p_spclk <= {p_spclk[0],OUT_SPCLK}; // double ff to avoid meta
-      wdata   <= wdata + 1'b1;
+      if(ad_cache_wr)
+         wdata   <= wdata + 1'b1;
    end
-`else
+`else 
+   assign ad_cache_sync  = IN_SYNC;
+	assign ad_cache_spclk = IN_SPCLK;
 	assign ad_cache_wclk  = IN_AD_CLK;
 	assign ad_cache_wdata = AD_DB;
+`endif
 
    always@(posedge ad_cache_wclk) begin
-      p_sync  <= {p_sync[0],IN_SYNC};  // double ff to avoid meta
-      p_spclk <= {p_spclk[0],IN_SPCLK}; // double ff to avoid meta
+      sd_cnt <= sd_cnt + 1'b1;
+      if(sd_cnt==15000/`AD_SAMPLE_RATE-1)
+         sd_cnt <= 0;
+      ad_cache_wr <= (sd_cnt==0);
    end
-`endif
    
    ad_cache u_ad_cache
    (
       .en    (cmdex_ad_acq_en),
-      .sync  (p_sync[1]      ),
-      .spclk (p_spclk[1]     ),
+      .sync  (ad_cache_sync  ),
+      .spclk (ad_cache_spclk ),
       .wclk  (ad_cache_wclk  ),
-      .wr    (`HIGH          ),
+      .wr    (ad_cache_wr    ),
       .wdata (ad_cache_wdata ),
       .rclk  (mclk           ),
       .rd    (cmdec_ad_rd    ),
@@ -143,36 +149,57 @@ module top
    ////////////////// USB PHY Slave FIFO Controller
 
    // slave fifo control
-   wire                         usb_ctrl_sloe;
-   wire                         usb_ctrl_slrd;
-   wire                         usb_ctrl_slwr;
-   wire                         usb_ctrl_pkend;
-   wire [`USB_FIFOADR_NBIT-1:0] usb_ctrl_fifoadr;
-   wire                         usb_ctrl_wen;
-   wire [`USB_DATA_NBIT-1:0]    usb_ctrl_wdata;
-   wire [`USB_DATA_NBIT-1:0]    usb_ctrl_rdata;
-   wire                         usb_ctrl_empty;
-   wire                         usb_ctrl_full;
+   wire                          usb_ctrl_sloe;
+   wire                          usb_ctrl_slrd;
+   wire                          usb_ctrl_slwr;
+   wire                          usb_ctrl_pkend;
+   wire [`USB_FIFOADR_NBIT-1:0]  usb_ctrl_fifoadr;
+   wire                          usb_ctrl_wen;
+   wire [`USB_DATA_NBIT-1:0]     usb_ctrl_wdata;
+   wire [`USB_DATA_NBIT-1:0]     usb_ctrl_rdata;
+   wire                          usb_ctrl_empty;
+   wire                          usb_ctrl_full;
 
-   assign USB_DB         =  usb_ctrl_wen ? usb_ctrl_wdata : {`USB_DATA_NBIT{1'bZ}};
-   assign USB_SLOE       = ~usb_ctrl_sloe;
-   assign USB_SLRD       = ~usb_ctrl_slrd;
-   assign USB_SLWR       = ~usb_ctrl_slwr;
-   assign USB_PKEND      = ~usb_ctrl_pkend;
-   assign USB_FIFOADR    =  usb_ctrl_fifoadr;
-   assign usb_ctrl_rdata =  USB_DB;
-   assign usb_ctrl_empty = ~USB_FLAGB; // End Point 2 empty flag
-   assign usb_ctrl_full  = ~USB_FLAGC; // End Point 6 full flag
+   assign USB_DB              =  usb_ctrl_wen ? usb_ctrl_wdata : {`USB_DATA_NBIT{1'bZ}};
+   assign USB_SLOE            = ~usb_ctrl_sloe;
+   assign USB_SLRD            = ~usb_ctrl_slrd;
+   assign USB_SLWR            = ~usb_ctrl_slwr;
+   assign USB_PKEND           = ~usb_ctrl_pkend;
+   assign USB_FIFOADR         =  usb_ctrl_fifoadr;
+   assign usb_ctrl_rdata      =  USB_DB;
+   assign usb_ctrl_empty      = ~USB_FLAGB; // End Point 2 empty flag
+   assign usb_ctrl_full       = ~USB_FLAGC; // End Point 6 full flag
 
 
    // RX Data From USB PHY
-   wire                      usb_rx_cache_vd  ;
-   wire [`USB_DATA_NBIT-1:0] usb_rx_cache_data;
-   wire                      usb_rx_cache_sop ;
-   wire                      usb_rx_cache_eop ;
-   // Send Data to USB PHY   
-   wire [`USB_ADDR_NBIT-1:0] usb_tx_cache_addr;
-   wire [`USB_DATA_NBIT-1:0] usb_tx_cache_data;
+   wire                          usb_rx_cache_vd  ;
+   wire [`USB_DATA_NBIT-1:0]     usb_rx_cache_data;
+   wire                          usb_rx_cache_sop ;
+   wire                          usb_rx_cache_eop ;
+   // Send Data to USB PHY       
+   wire [`USB_ADDR_NBIT-1:0]     usb_tx_cache_addr;
+   wire [`USB_DATA_NBIT-1:0]     usb_tx_cache_data;
+   reg                           usb_tx_cache_sop;
+   
+   reg  [`BUFFER_BADDR_NBIT-1:0] usb_tx_cache_baddr;
+   reg  [2:0]                    p_cmdec_tx_eop;
+   
+   always@(posedge usb_clk) begin
+      p_cmdec_tx_eop   <= {p_cmdec_tx_eop[1:0],cmdec_tx_eop};
+      usb_tx_cache_sop <= `LOW;
+      if(p_cmdec_tx_eop[2:1]==2'b01) begin
+         if(cmdex_tx_baddr==0) begin // handshake
+            usb_tx_cache_sop   <= `HIGH;
+            usb_tx_cache_baddr <= `BUFFER_BADDR_NBIT'd0;
+         end
+         else if(~usb_ctrl_full) begin
+            usb_tx_cache_sop   <= `HIGH;
+            usb_tx_cache_baddr <= usb_tx_cache_baddr + 1'b1;
+            if(usb_tx_cache_baddr==0 || usb_tx_cache_baddr=={`BUFFER_BADDR_NBIT{1'b1}})
+               usb_tx_cache_baddr <= `BUFFER_BADDR_NBIT'd1;
+         end
+      end
+   end
 
    usb_slavefifo u_usb_slavefifo
    (
@@ -191,7 +218,7 @@ module top
       .rx_cache_data(usb_rx_cache_data),
       .rx_cache_sop (usb_rx_cache_sop ),
       .rx_cache_eop (usb_rx_cache_eop ),
-      .tx_cache_sop (cmdec_tx_eop     ),
+      .tx_cache_sop (usb_tx_cache_sop ),
       .tx_cache_addr(usb_tx_cache_addr),
       .tx_cache_data(usb_tx_cache_data)
    );
@@ -209,12 +236,12 @@ module top
    cmd_decode u_cmd_decode
    (
       .mclk     (mclk             ),
-      .sync     (IN_SYNC          ),
       .ad_rd    (cmdec_ad_rd      ),
       .ad_chn   (cmdec_ad_chn     ),
       .ad_data  (ad_cache_rdata   ),
       .ad_switch(ad_cache_switch  ),
       .ad_acq_en(cmdex_ad_acq_en  ),
+      .rx_clk   (usb_clk          ),
       .rx_vd    (usb_rx_cache_vd  ),
       .rx_data  (usb_rx_cache_data),
       .rx_sop   (usb_rx_cache_sop ),
@@ -229,17 +256,7 @@ module top
    ////////////////// TX BUFFER
    
    wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_raddr;
-   assign tx_buffer_raddr = {cmdex_tx_baddr,usb_tx_cache_addr};
-
-//   buffered_ram #(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,"./tx_buf_2048x16.mif")
-//   tx_buffer(
-//      .inclk       (mclk             ),
-//      .in_wren     (cmdec_tx_vd      ),
-//      .in_wraddress(cmdec_tx_addr    ),
-//      .in_wrdata   (cmdec_tx_data    ),
-//      .in_rdaddress(tx_buffer_raddr  ),
-//      .out_rddata  (usb_tx_cache_data)
-//   );   
+   assign tx_buffer_raddr = {usb_tx_cache_baddr,usb_tx_cache_addr};
 
    buffered_ram_tdp #(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
                       `BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
@@ -258,13 +275,13 @@ module top
    );
       
    ////////////////// SYNC OUT
-   reg  [8:0]  div;
+   reg  [9:0]  div;
    reg  [9:0]  sync_cnt;
    reg         OUT_SYNC;
    reg         OUT_SPCLK;
    reg         OUT_DATA;
    always@(posedge mclk) begin   
-      if(div == 9'd249) begin // Sample rate - 50MHz/500 = 100KHz
+      if(div == 10'd999) begin // Sample rate - 100MHz/1000 = 100KHz
          div <= 0;
          if(sync_cnt == 10'd511) // 256X2 samples(200MSPS) in one frame sync cycle
             sync_cnt <= 0;
@@ -274,17 +291,17 @@ module top
       else 
          div <= div + 1'b1;
       
+      // sample clock, 100KHz
+      if(div<10'd499)
+         OUT_SPCLK <= `HIGH;
+      else
+         OUT_SPCLK <= `LOW;
+
       // sync: 0~8 HIGH; 9~136 LOW
       if(sync_cnt<10'd9)
          OUT_SYNC <= `HIGH;
       else
          OUT_SYNC <= `LOW;
-         
-      // sample clock
-      if(div<8'd124)
-         OUT_SPCLK <= `HIGH;
-      else
-         OUT_SPCLK <= `LOW;
       
       // data: 0~127 +3.3V; 128~255 0V
       if(sync_cnt<10'd255) 

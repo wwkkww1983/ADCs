@@ -10,3 +10,7 @@
 /FPGABoard/prj/output_files
 /FPGABoard/prj/incremental_db
 /FPGABoard/FPGABrd.DESKTOP-L06O4HL.Hoki.pui
+/FPGABoard/stp/stp1-huxiaokai-1.stp
+/FPGABoard/prj/*.rpt
+/FPGABoard/prj/adcs.map.summary
+/FPGABoard/prj/adcs.qws

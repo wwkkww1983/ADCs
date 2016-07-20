@@ -96,16 +96,18 @@ module usb_slavefifo
    reg [`USB_ADDR_NBIT-1:0] tx_cache_addr;
    reg                      p_in_proc;
    reg                      slwr;
-   reg [`USB_DATA_NBIT-1:0] wdata;                                                            
+   reg [`USB_DATA_NBIT-1:0] wdata;
+   reg [2:0]                p_tx_cache_sop;
       
    always@(posedge ifclk) begin
-      p_in_proc  <= tx_in_proc;
-      slwr       <= p_in_proc;
+      p_in_proc      <= tx_in_proc;
+      slwr           <= p_in_proc;
+      p_tx_cache_sop <= {p_tx_cache_sop[1:0],tx_cache_sop};
       case(tx_st) 
          `ST_IDLE: begin
             tx_delay_cnt <= 0;
             tx_cache_addr <= 0;
-            if(tx_cache_sop)
+            if(~f_full&&(p_tx_cache_sop[2:1]==2'b01))
                tx_st <= `ST_T0;
          end
          `ST_T0: begin // Check if TX FIFO is FULL

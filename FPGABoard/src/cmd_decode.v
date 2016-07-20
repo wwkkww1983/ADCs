@@ -21,17 +21,16 @@
 module cmd_decode
 (
    mclk,
-   sync,
    ad_rd,
    ad_data,
    ad_switch,
    ad_chn,
    ad_acq_en,
-   
+   rx_clk,
    rx_vd,
    rx_data,
    rx_sop,
-   rx_eop ,
+   rx_eop,
    tx_vd,
    tx_addr,
    tx_data,
@@ -41,13 +40,12 @@ module cmd_decode
 
    ////////////////// PORT ////////////////////
    input                           mclk;   // main clock 48MHz
-   input                           sync;
    output                          ad_rd;
    input  [`USB_DATA_NBIT-1:0]     ad_data;
    input                           ad_switch;
    output [`AD_CHN_NBIT-1:0]       ad_chn;
    output                          ad_acq_en;
-                                   
+   input                           rx_clk;
    input                           rx_vd  ;
    input  [`USB_DATA_NBIT-1:0]     rx_data;
    input                           rx_sop ;
@@ -93,7 +91,7 @@ module cmd_decode
    );   
    
    // decode rx command
-   always@(posedge mclk) begin: rx_fsm   
+   always@(posedge rx_clk) begin: rx_fsm   
       // Statement
       fsm_rx_eop <= `LOW;
       case(fsm_rx_st)
@@ -144,27 +142,31 @@ module cmd_decode
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_pf;
    reg  [`MSG_STR_NBIT-1:0]       tx_pf_code;
    reg  [`AD_CNT_NBIT-1:0]        tx_adc_cnt;
-   reg  [2:0]                     p_sync;
-   reg                            tx_sync_en;
    reg  [`AD_CHN_NBIT-1:0]        ad_chn;
+   reg  [2:0]                     p_fsm_rx_eop;
+   reg  [2:0]                     p_ad_switch;
                              
    reg proc_handshake_start;
+   reg proc_acq_start;
 
    always@(posedge mclk) begin: ins_exe
-      p_sync <= {p_sync[1:0],sync};
       proc_handshake_start <= `LOW;
+      proc_acq_start       <= `LOW;
       case(ascii_rx_type)
          `MSG_TYPE_HANDSHAKE: begin
             tx_msg_type  <= `MSG_TYPE_HANDSHAKE;
             tx_msg_pf    <= `MSG_PASS;
             tx_pf_code   <= `MSG_FP_CODE_01; // pass code 01: handshake succeed
-            proc_handshake_start <= fsm_rx_eop;
+            p_fsm_rx_eop <= {p_fsm_rx_eop[1:0],fsm_rx_eop};
+            proc_handshake_start <= (p_fsm_rx_eop[2:1]==2'b01);
          end
          `MSG_TYPE_START: begin
             tx_msg_type  <= `MSG_TYPE_START;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_02 : `MSG_FP_CODE_01; 
-            if(ad_switch) begin
+            p_ad_switch <= {p_ad_switch[1:0],ad_switch};
+            proc_acq_start <= ^p_ad_switch[2:1];
+            if(^p_ad_switch[2:1]) begin
             	tx_adc_cnt <= tx_adc_cnt + 1'b1;
             end
             ad_acq_en <= `HIGH;
@@ -200,12 +202,11 @@ module cmd_decode
    reg  [`AD_CNT_NBIT-1:0]       p_adc_cnt;
 
    assign tx_msg_sop = proc_handshake_start |
-                      (ad_acq_en & ad_switch);
+                       proc_acq_start;
    assign tx_addr    = {tx_buf_baddr,tx_buf_addr};
    
    always@(posedge mclk) begin: tx_fsm
       tx_vd  <= `LOW;
-      tx_eop <= `LOW;
       ad_rd  <= `LOW;
       case(tx_st) 
          `ST_MSG_IDLE: begin
@@ -215,6 +216,7 @@ module cmd_decode
                tx_st <= `ST_MSG_HEAD;
          end
          `ST_MSG_HEAD: begin
+            tx_eop <= `LOW;
             tx_vd <= `HIGH;
             tx_buf_addr <= 0;
             tx_data <= `MSG_HEAD;
@@ -274,14 +276,11 @@ module cmd_decode
             end
             tx_cnt      <= tx_cnt - 1'b1;
             if(tx_cnt==`USB_ADDR_NBIT'd1) begin // 1 ~ AD_CHE_DATA_SIZE
-               tx_cnt <= {`USB_ADDR_NBIT{1'b1}};
                tx_st  <= `ST_MSG_END;
             end
          end
          `ST_MSG_END: begin
-            tx_cnt  <= 0;
             tx_data <= 0; // clean TX BUFFER
-            tx_vd   <= `HIGH;
             tx_buf_addr <= tx_buf_addr + 1'b1;
             if(tx_buf_addr=={`USB_ADDR_NBIT{1'b1}}) begin
                tx_vd   <= `LOW;
