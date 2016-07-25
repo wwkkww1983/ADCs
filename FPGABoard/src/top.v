@@ -50,11 +50,11 @@ module top
 	input								    CLK2; // 50MHz
    output                         OE;
    
-   input                          IN_SYNC; // frame sync input
-   input                          IN_SPCLK; // sample clock input, 200KHz
-   output                         OUT_SYNC; // simulate frame sync output
-   output                         OUT_SPCLK;// simulate sample clock, 200KHz
-   output                         OUT_DATA; // simulate data
+   input                          IN_SYNC;    // frame sync input
+   input                          IN_SPCLK;   // sample clock input, 200KHz
+   output                         OUT_SYNC;   // simulate frame sync output
+   output                         OUT_SPCLK;  // simulate sample clock, 200KHz
+   output                         OUT_DATA;   // simulate data
    
    output                         USB_XTALIN; // USB PHY CPU clock, 24MHz
    input                          USB_FLAGB;  // USB PHY EP2 empty flag
@@ -113,10 +113,12 @@ module top
 	assign ad_cache_spclk = OUT_SPCLK;
 	assign ad_cache_wclk  = OUT_AD_CLK;
 	assign ad_cache_wdata = wdata;
-
+   
+   reg  [2:0]              p_ad_cache_spclk;
    always@(posedge ad_cache_wclk) begin
-      if(ad_cache_wr)
-         wdata   <= wdata + 1'b1;
+      p_ad_cache_spclk <= {p_ad_cache_spclk[1:0],ad_cache_spclk};
+      if(ad_cache_wr&&(p_ad_cache_spclk[2:1]==2'b01))
+         wdata <= wdata + 1'b1;
    end
 `else 
    assign ad_cache_sync  = IN_SYNC;
@@ -129,7 +131,7 @@ module top
       sd_cnt <= sd_cnt + 1'b1;
       if(sd_cnt==15000/`AD_SAMPLE_RATE-1)
          sd_cnt <= 0;
-      ad_cache_wr <= (sd_cnt==0);
+      ad_cache_wr <= `HIGH;
    end
    
    ad_cache u_ad_cache
@@ -275,15 +277,15 @@ module top
    );
       
    ////////////////// SYNC OUT
-   reg  [9:0]  div;
-   reg  [9:0]  sync_cnt;
-   reg         OUT_SYNC;
-   reg         OUT_SPCLK;
-   reg         OUT_DATA;
+   reg  [15:0]             div;
+   reg  [`AD_SP_NBIT-1:0]  sync_cnt;
+   reg                     OUT_SYNC;
+   reg                     OUT_SPCLK;
+   reg                     OUT_DATA;
    always@(posedge mclk) begin   
-      if(div == 10'd999) begin // Sample rate - 100MHz/1000 = 100KHz
+      if(div == 100000/`AD_SPCLK_RATE-1) begin
          div <= 0;
-         if(sync_cnt == 10'd511) // 256X2 samples(200MSPS) in one frame sync cycle
+         if(sync_cnt == 511)
             sync_cnt <= 0;
          else
             sync_cnt <= sync_cnt + 1'b1;
@@ -291,20 +293,20 @@ module top
       else 
          div <= div + 1'b1;
       
-      // sample clock, 100KHz
-      if(div<10'd499)
+      // sample clock
+      if(div<100000/`AD_SPCLK_RATE/2)
          OUT_SPCLK <= `HIGH;
       else
          OUT_SPCLK <= `LOW;
 
       // sync: 0~8 HIGH; 9~136 LOW
-      if(sync_cnt<10'd9)
+      if(sync_cnt<9)
          OUT_SYNC <= `HIGH;
       else
          OUT_SYNC <= `LOW;
       
       // data: 0~127 +3.3V; 128~255 0V
-      if(sync_cnt<10'd255) 
+      if(sync_cnt<255) 
          OUT_DATA <= `HIGH;
       else
          OUT_DATA <= `LOW;

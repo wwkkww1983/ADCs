@@ -102,7 +102,6 @@ set_false_path -from {usb_slavefifo:u_usb_slavefifo|slwr} -to [get_ports {USB_FI
 set_false_path -from {usb_slavefifo:u_usb_slavefifo|tx_st.*} -to [get_ports {USB_DB[*]}]
 set_false_path -from {USB_FLAGC} -to [get_ports {USB_DB[*]}]
 set_false_path -from {USB_FLAGC} -to [get_ports {USB_DB[*]}]
-set_false_path -from {buffered_ram:tx_buffer|altsyncram:buffered_ram_altsyncram|altsyncram_76s1:auto_generated|q_b[*]} -to [get_ports {USB_DB[*]}]
 set_false_path -from {USB_FLAGC} -to {USB_SLRD}
 set_false_path -from [get_ports {USB_FLAGB}] -to [get_ports {USB_FIFOADR[*]}]
 set_false_path -from {usb_slavefifo:u_usb_slavefifo|tx_st.00} -to {USB_FIFOADR[1]}

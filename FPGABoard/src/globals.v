@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////
 // 
 //  Revision: 1.0
-   `define DEBUG               1'b1  // using simulate SYNC, SPCLK, AD_CLK, AD_DB
+//   `define DEBUG               1'b1  // using simulate SYNC, SPCLK, AD_CLK, AD_DB
    
    `define HIGH                1'b1
    `define LOW                 1'b0
@@ -39,7 +39,7 @@
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    
-   ////////////////// AD7606
+   ////////////////// LTC2387
    `define AD_DATA_NBIT        18
    `define AD_CHN_NBIT         3   // channel 
    `define AD_CHN_NUM          8   // channel number
@@ -48,11 +48,11 @@
    `define AD_CHE_DATA_SIZE    `USB_ADDR_NBIT'd246 // cache buffer data size
    `define AD_CNT_NWORD        `USB_ADDR_NBIT'd3
    `define AD_CNT_NBIT         `AD_CNT_NWORD*`USB_DATA_NBIT
-   `define AD_SP_NBIT          16
-   `define AD_SAMPLE_RATE      750                       // unit(1KHz), e.g. 200 - 200KHz, 2000 - 2MHz 
-   `define AD_SP_NUM           (`AD_SAMPLE_RATE*256/100) // SAMPLE_RATE/100KHz * 256, e.g. 150 * 256 for 15MHz sample rate
-   `define AD_SPCLK_NBIT       9
-   `define AD_SP_START_IDX     `AD_SPCLK_NBIT'd16
+   `define AD_SP_NBIT          10
+//   `define AD_SAMPLE_RATE      1000 // unit(1KHz), e.g. 200 - 200KHz, 2000 - 2MHz 
+   `define AD_SP_NUM           256  // SAMPLE 256 data after sync
+   `define AD_SP_START_IDX     16
+   `define AD_SPCLK_RATE       1000 // unit(1KHz)
    
    ////////////////// COMMUNICATION, BYTE INVERTED
    `define MSG_STR_NBIT        `USB_DATA_NBIT
