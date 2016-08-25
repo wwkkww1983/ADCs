@@ -53,7 +53,9 @@
    `define AD_SP_NUM           256  // SAMPLE 256 data after sync
    `define AD_SP_START_IDX     16
    `define AD_SPCLK_RATE       1000 // unit(1KHz)
-   
+
+   `define AD_AVG_NUM_NBIT     2
+      
    ////////////////// COMMUNICATION, BYTE INVERTED
    `define MSG_STR_NBIT        `USB_DATA_NBIT
       

@@ -45,6 +45,23 @@ module ad_cache
 
    ////////////////// ARCH ////////////////////
 
+   ////////////////// Average
+   wire                         avg_wr;
+   wire [`AD_DATA_NBIT-1:0]     avg_data;
+   wire                         avg_rst;
+   
+   assign avg_rst = p_sync[2:1]==2'b01;
+   
+   adc_avg adc_avg_u
+   (
+      .clk        (wclk    ),
+      .rst        (avg_rst ),
+      .i_strobe   (wr      ),
+      .i_inst_data(wdata   ),
+      .o_strobe   (avg_wr  ),
+      .o_avg_data (avg_data)
+   );
+   
    ////////////////// WRITE   
    reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;
    reg                          wswitch;
@@ -62,12 +79,12 @@ module ad_cache
       p_sync  <= {p_sync[1:0],sync};
       
       cache_wr <= `LOW;
-      if(wr) begin
+      if(avg_wr) begin
          p_spclk <= {p_spclk[1:0],spclk};
          if((p_spclk[2:1]==2'b01)) begin
             spclk_cnt <= spclk_cnt + 1'b1;
             cache_wcnt <= cache_wcnt + 1'b1;
-            buf_wdata <= {buf_wdata[`AD_CHE_DATA_NBIT-25:0],{{24-`AD_DATA_NBIT{wdata[`AD_DATA_NBIT-1]}},wdata}};
+            buf_wdata <= {buf_wdata[`AD_CHE_DATA_NBIT-25:0],{{24-`AD_DATA_NBIT{avg_data[`AD_DATA_NBIT-1]}},avg_data}};
             if((cache_wcnt==1)&&(spclk_cnt>=`AD_SP_START_IDX)&&(spclk_cnt<`AD_SP_START_IDX+`AD_SP_NUM))
                cache_wr  <= ~cache_wr;
          end

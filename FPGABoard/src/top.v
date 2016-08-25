@@ -97,16 +97,15 @@ module top
 	
    ////////////////// LTC2387 controller
    
-   wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    reg                       ad_cache_wr;
    wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
    wire                      ad_cache_switch;
    wire                      ad_cache_sync;
    wire                      ad_cache_spclk;
 	wire                      ad_cache_wclk;
-	reg  [7:0]                sd_cnt;
 
 `ifdef DEBUG
+   wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    reg  [`AD_DATA_NBIT-1:0]  wdata;
 	
 	assign ad_cache_sync  = OUT_SYNC;
@@ -116,23 +115,25 @@ module top
    
    reg  [2:0]              p_ad_cache_spclk;
    always@(posedge ad_cache_wclk) begin
+      ad_cache_wr    <= `HIGH;
       p_ad_cache_spclk <= {p_ad_cache_spclk[1:0],ad_cache_spclk};
       if(ad_cache_wr&&(p_ad_cache_spclk[2:1]==2'b01))
          wdata <= wdata + 1'b1;
    end
 `else 
+   reg  [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
+   wire [`AD_DATA_NBIT-1:0]  wdata;
+   
    assign ad_cache_sync  = IN_SYNC;
 	assign ad_cache_spclk = IN_SPCLK;
-	assign ad_cache_wclk  = IN_AD_CLK;
-	assign ad_cache_wdata = AD_DB;
-`endif
+	assign ad_cache_wclk  = ~IN_AD_CLK;
+	assign wdata          = AD_DB;
 
    always@(posedge ad_cache_wclk) begin
-      sd_cnt <= sd_cnt + 1'b1;
-      if(sd_cnt==15000/`AD_SAMPLE_RATE-1)
-         sd_cnt <= 0;
-      ad_cache_wr <= `HIGH;
+      ad_cache_wr    <= `HIGH;
+      ad_cache_wdata <= wdata;
    end
+`endif
    
    ad_cache u_ad_cache
    (
