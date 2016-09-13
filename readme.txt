@@ -1,2 +1,1 @@
-ADCBoard: include project based on QuartusII 13.1
-FPGABoard: include project based on QuartusII Prime 15.1
+FPGABoard: include project based on QuartusII Prime 15.1, connect with AD7960 board
