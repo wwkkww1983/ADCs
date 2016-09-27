@@ -1,0 +1,3 @@
+Created on:D??¨²?t, ???? 27, 2016
+Based on:adc_v2
+Board hardware check

@@ -16,7 +16,7 @@
 //
 //  Revision: 1.0
 
-module top
+module brdtop
 (
    // Clock Source
    CLK1,
@@ -33,6 +33,10 @@ module top
    D,
    CNV,
    AD_CLK,
+   DCO_N,
+   D_N,
+   CNV_N,
+   AD_CLK_N,
    AD_EN,
    AD_PG,
    // USB
@@ -70,12 +74,16 @@ module top
    output                         USB_PKEND;  // USB PHY pktend
    output [`USB_FIFOADR_NBIT-1:0] USB_FIFOADR;// USB PHY fifoadr
 
-   // LVDS inputs
-   input                          DCO;        // DCO from A/D (DCO- on schematic)
-   input                          D;          // Lane A data from A/D (DA- on schematic)
-   // LVDS outputs                            
-   output                         AD_CLK;     // Serial clock to A/D (CLK- on schematic)
+   output                         DCO;    
+   output                         D;      
+   output                         AD_CLK; 
    output                         CNV;
+   output                         DCO_N;    
+   output                         D_N;      
+   output                         AD_CLK_N; 
+   output                         CNV_N;
+
+
    // ADC Enable
    output [3:0]                   AD_EN;      // AD7960 Enable
    output                         AD_PG;
@@ -84,6 +92,16 @@ module top
 
    assign OE    = `HIGH;
    assign AD_PG = `HIGH; // Enable +12V -> +5V, +12V -> +7V
+   assign AD_EN = `AD_MODE_SLEEP;
+
+   assign DCO      = `LOW;       
+   assign D        = `LOW;         
+   assign AD_CLK   = `LOW;    
+   assign CNV      = `LOW;       
+   assign DCO_N    = `LOW;     
+   assign D_N      = `LOW;       
+   assign AD_CLK_N = `LOW;  
+   assign CNV_N    = `LOW;     
    
    ////////////////// Clock Generation
    
@@ -103,7 +121,7 @@ module top
    wire   ad_fast_clk; // 300MHz
 	
    adc_pll_ext adc_pll_u(
-   	.inclk0(CLK2),
+   	.inclk0(mclk),
    	.c0(ad_fast_clk));
 
 	////////////////// AD7960 controller
@@ -112,19 +130,17 @@ module top
 
    AD7960 AD7960_U
    (
-      .m_clk_i      (mclk         ),
-      .fast_clk_i   (ad_fast_clk  ),
-      .reset_n_i    (`HIGH        ),      
-      .en_i         (`AD_MODE_REF2),      
-      .d_pos_i      (D            ),
-      .dco_pos_i    (DCO          ),
-      .en_o         (AD_EN        ),           
-      .cnv_pos_o    (CNV          ),
-      .cnv_neg_o    (),   
-      .clk_pos_o    (AD_CLK       ),
-      .clk_neg_o    (),
-      .data_rd_rdy_o(ad_dv        ),
-      .data_o       (ad_db        )       
+      .m_clk_i      (mclk       ),
+      .fast_clk_i   (ad_fast_clk),
+      .reset_n_i    (`HIGH      ),      
+      .en_i         (`HIGH      ),      
+      .d_neg_i      (D          ),        
+      .dco_neg_i    (DCO        ),      
+      .en_o         (),           
+      .cnv_neg_o    (        ),      
+      .clk_neg_o    (     ),
+      .data_rd_rdy_o(ad_dv      ),
+      .data_o       (ad_db      )       
    );
 
    reg                       ad_cache_wr;   
@@ -154,8 +170,8 @@ module top
    reg  [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    wire [`AD_DATA_NBIT-1:0]  wdata;
    
-   assign ad_cache_sync  = OUT_SYNC;
-	assign ad_cache_spclk = OUT_SPCLK;
+   assign ad_cache_sync  = IN_SYNC;
+	assign ad_cache_spclk = IN_SPCLK;
 	assign ad_cache_wclk  = ad_dv;
 	assign wdata          = ad_db;
 

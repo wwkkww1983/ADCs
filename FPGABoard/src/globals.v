@@ -54,7 +54,13 @@
    `define AD_SP_START_IDX     16
    `define AD_SPCLK_RATE       1000 // unit(1KHz)
 
+   `define AD_AVG_EN           1'b0
    `define AD_AVG_NUM_NBIT     2
+   
+   `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v)
+   `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v)
+   `define AD_MODE_TEST        4'b0100
+   `define AD_MODE_SLEEP       4'b1111
       
    ////////////////// COMMUNICATION, BYTE INVERTED
    `define MSG_STR_NBIT        `USB_DATA_NBIT

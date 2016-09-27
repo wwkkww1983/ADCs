@@ -19,13 +19,16 @@
 #
 # Quartus Prime
 # Version 15.1.0 Build 185 10/21/2015 SJ Standard Edition
-# Date created = 17:07:38  March 28, 2016
+# Date created = 10:26:32  September 27, 2016
 #
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "15.1"
-DATE = "17:07:38  March 28, 2016"
+DATE = "10:26:32  September 27, 2016"
 
 # Revisions
 
+PROJECT_REVISION = "adc_v2"
+PROJECT_REVISION = "BoardTest"
+PROJECT_REVISION = "adc_v3"
 PROJECT_REVISION = "adcs"

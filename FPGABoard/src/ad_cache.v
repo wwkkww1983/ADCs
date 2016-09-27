@@ -46,21 +46,29 @@ module ad_cache
    ////////////////// ARCH ////////////////////
 
    ////////////////// Average
-   wire                         avg_wr;
+   wire                         avg_wr  ;
    wire [`AD_DATA_NBIT-1:0]     avg_data;
    wire                         avg_rst;
    
    assign avg_rst = p_sync[2:1]==2'b01;
    
-   adc_avg adc_avg_u
-   (
-      .clk        (wclk    ),
-      .rst        (avg_rst ),
-      .i_strobe   (wr      ),
-      .i_inst_data(wdata   ),
-      .o_strobe   (avg_wr  ),
-      .o_avg_data (avg_data)
-   );
+   generate
+      if(`AD_AVG_EN) begin: ad_average
+         adc_avg adc_avg_u
+         (
+            .clk        (wclk    ),
+            .rst        (avg_rst ),
+            .i_strobe   (wr      ),
+            .i_inst_data(wdata   ),
+            .o_strobe   (avg_wr  ),
+            .o_avg_data (avg_data)
+         );
+      end
+      else begin: ad_instant
+         assign avg_wr   = wr;
+         assign avg_data = wdata;
+      end
+   endgenerate
    
    ////////////////// WRITE   
    reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;

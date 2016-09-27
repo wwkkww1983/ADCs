@@ -1,0 +1,40 @@
+Info: *******************************************************************
+Info: Running Quartus Prime Worker Version 15.1.0 Build 185 10/21/2015 SJ Standard Edition
+Info: Your use of Altera Corporation's design tools, logic functions 
+Info: and other software and tools, and its AMPP partner logic 
+Info: functions, and any output files from any of the foregoing 
+Info: (including device programming or simulation files), and any 
+Info: associated documentation or information are expressly subject 
+Info: to the terms and conditions of the Altera Program License 
+Info: Subscription Agreement, the Altera Quartus Prime License Agreement,
+Info: the Altera MegaCore Function License Agreement, or other 
+Info: applicable license agreement, including, without limitation, 
+Info: that your use is for the sole purpose of programming logic 
+Info: devices manufactured by Altera and sold by Altera or its 
+Info: authorized distributors.  Please refer to the applicable 
+Info: agreement for further details.
+Info: *******************************************************************
+Info: Registering self with server http://192.168.87.129:50154/api/v1.0/broker/server/
+Info: Successfully registered with server.
+Info: Starting compilation quartus_py -m quartus.dse.fit_sta adc_v2.qsf
+Info: Sent timestamps successfully
+Info: Preparing to compile adc_v2 ...
+Info: Downloading adc_v2.qar ...
+Info: Finished download.
+Info: Running quartus_sh --restore -output dse/dse1/dse1_20 dse/dse1/dse1_20\adc_v2.qar
+Info: Downloading dse1_20.qsf ...
+Info: Finished download.
+Info: Downloading dse1_20.qpf ...
+Info: Finished download.
+Info: Sent timestamps successfully
+Info: Sent timestamps successfully
+Info: Compilation finished. 0 msgs
+Info: Processing keep results option: reports_only
+Info: Deleting exploration folder: dse/dse1/dse1_20 except: ['worker_compile.log']. The current directory is X:\ADCs\FPGA\ADCLVDS\FPGABoard\prj
+Info: Deleting file: adc_v2.qar
+Info: Deleting file: adc_v2.qarlog
+Info: Deleting directory: prj
+Info: Deleting file: qar_info.json
+Info: Deleting directory: src
+Info: Deleting directory: stp
+Info: Sent timestamps successfully
