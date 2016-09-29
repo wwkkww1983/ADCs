@@ -41,25 +41,27 @@
    
    ////////////////// LTC2387
    `define AD_DATA_NBIT        18
-   `define AD_CHN_NBIT         3   // channel 
-   `define AD_CHN_NUM          8   // channel number
+   `define AD_CHN_NBIT         3                   // channel 
+   `define AD_CHN_NUM          8                   // channel number
    `define AD_CHE_ADDR_NBIT    7                   // cache buffer address width 
-   `define AD_CHE_DATA_NBIT    48 // 24*2 = 16*3
+   `define AD_CHE_DATA_NBIT    48                  // 24*2 = 16*3
    `define AD_CHE_DATA_SIZE    `USB_ADDR_NBIT'd246 // cache buffer data size
    `define AD_CNT_NWORD        `USB_ADDR_NBIT'd3
    `define AD_CNT_NBIT         `AD_CNT_NWORD*`USB_DATA_NBIT
    `define AD_SP_NBIT          10
-//   `define AD_SAMPLE_RATE      1000 // unit(1KHz), e.g. 200 - 200KHz, 2000 - 2MHz 
-   `define AD_SP_NUM           256  // SAMPLE 256 data after sync
-   `define AD_SP_START_IDX     16
-   `define AD_SPCLK_RATE       1000 // unit(1KHz)
+   `define AD_SP_NUM           256                 // SAMPLE 256 data after sync
+   `define AD_SP_START_IDX     13
+   `define AD_MCLK_RATE        100000              // unit(1KHz)
+   `define AD_SPCLK_RATE       1000                // unit(1KHz)
+   `define AD_SPCLK_DELAY      0
 
    `define AD_AVG_EN           1'b0
    `define AD_AVG_NUM_NBIT     2
    
-   `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v)
-   `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v)
+   `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v), bandwidth 28MHz
+   `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v), bandwidth 28MHz
    `define AD_MODE_TEST        4'b0100
+
    `define AD_MODE_SLEEP       4'b1111
       
    ////////////////// COMMUNICATION, BYTE INVERTED

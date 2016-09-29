@@ -80,6 +80,9 @@ set_clock_groups -exclusive -group [get_clocks {usb_pll:usb_pll_u|altpll:altpll_
 # Set False Path
 #**************************************************************
 
+set_false_path -from [get_ports {IN_SPCLK}] -to {ad_cache:u_ad_cache|p_spclk[0]}
+set_false_path -from [get_ports {IN_SYNC}] -to {ad_cache:u_ad_cache|p_sync[0]}
+set_false_path -from {OUT_SYNC~reg0} -to [get_ports {OUT_SYNC}]
 set_false_path -from {OUT_DATA~reg0} -to [get_ports {OUT_DATA}]
 set_false_path -from {OUT_SPCLK~reg0} -to [get_ports {OUT_SPCLK}]
 

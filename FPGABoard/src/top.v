@@ -103,7 +103,7 @@ module top
    wire   ad_fast_clk; // 300MHz
 	
    adc_pll_ext adc_pll_u(
-   	.inclk0(CLK2),
+   	.inclk0(mclk),
    	.c0(ad_fast_clk));
 
 	////////////////// AD7960 controller
@@ -112,7 +112,6 @@ module top
 
    AD7960 AD7960_U
    (
-      .m_clk_i      (mclk         ),
       .fast_clk_i   (ad_fast_clk  ),
       .reset_n_i    (`HIGH        ),      
       .en_i         (`AD_MODE_REF2),      
@@ -124,10 +123,9 @@ module top
       .clk_pos_o    (AD_CLK       ),
       .clk_neg_o    (),
       .data_rd_rdy_o(ad_dv        ),
-      .data_o       (ad_db        )       
+      .data_o       (ad_db        )
    );
 
-   reg                       ad_cache_wr;   
    wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
    wire                      ad_cache_switch;
    wire                      ad_cache_sync;
@@ -135,6 +133,7 @@ module top
 	wire                      ad_cache_wclk;
 
 `ifdef DEBUG
+   reg                       ad_cache_wr;   
    wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    reg  [`AD_DATA_NBIT-1:0]  wdata;
 	
@@ -151,18 +150,14 @@ module top
          wdata <= wdata + 1'b1;
    end
 `else 
-   reg  [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
-   wire [`AD_DATA_NBIT-1:0]  wdata;
+   wire                      ad_cache_wr;   
+   wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    
-   assign ad_cache_sync  = OUT_SYNC;
-	assign ad_cache_spclk = OUT_SPCLK;
+   assign ad_cache_sync  = IN_SYNC;
+	assign ad_cache_spclk = IN_SPCLK;
 	assign ad_cache_wclk  = ad_dv;
-	assign wdata          = ad_db;
-
-   always@(posedge ad_cache_wclk) begin
-      ad_cache_wr    <= `HIGH;
-      ad_cache_wdata <= wdata;
-   end
+   assign ad_cache_wr    = `HIGH;
+   assign ad_cache_wdata = ad_db;
 `endif
    
    ad_cache u_ad_cache
@@ -310,34 +305,42 @@ module top
    ////////////////// SYNC OUT
    reg  [15:0]             div;
    reg  [`AD_SP_NBIT-1:0]  sync_cnt;
+   reg  [`AD_SP_NBIT-1:0]  spclk_cnt;
    reg                     OUT_SYNC;
    reg                     OUT_SPCLK;
    reg                     OUT_DATA;
    always@(posedge mclk) begin   
-      if(div == 100000/`AD_SPCLK_RATE-1) begin
+      if(div == `AD_MCLK_RATE/`AD_SPCLK_RATE-1) begin
          div <= 0;
-         if(sync_cnt == 511)
-            sync_cnt <= 0;
-         else
+         if(spclk_cnt == 511) begin
+            spclk_cnt <= 0;
             sync_cnt <= sync_cnt + 1'b1;
+            if(sync_cnt==104)
+               sync_cnt <= 0;
+         end
+         else
+            spclk_cnt <= spclk_cnt + 1'b1;
       end
       else 
          div <= div + 1'b1;
       
       // sample clock
-      if(div<100000/`AD_SPCLK_RATE/2)
+      if(div<`AD_MCLK_RATE/`AD_SPCLK_RATE/2)
          OUT_SPCLK <= `HIGH;
       else
          OUT_SPCLK <= `LOW;
 
       // sync: 0~8 HIGH; 9~136 LOW
-      if(sync_cnt<9)
+      if(spclk_cnt<9) begin
          OUT_SYNC <= `HIGH;
+         if(sync_cnt>=100)
+            OUT_SYNC <= `LOW;
+      end
       else
          OUT_SYNC <= `LOW;
       
       // data: 0~127 +3.3V; 128~255 0V
-      if(sync_cnt<255) 
+      if(spclk_cnt<255) 
          OUT_DATA <= `HIGH;
       else
          OUT_DATA <= `LOW;

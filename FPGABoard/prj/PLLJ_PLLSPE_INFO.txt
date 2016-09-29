@@ -1,5 +1,5 @@
 PLL_Name	adc_pll_ext:adc_pll_u|altpll:altpll_component|adc_pll_ext_altpll1:auto_generated|pll1
-PLLJITTER	30
+PLLJITTER	29
 PLLSPEmax	84
 PLLSPEmin	-53
 

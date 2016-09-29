@@ -18,7 +18,6 @@
 /////////////////////////// MODULE //////////////////////////////
 module AD7960
     (
-        input           m_clk_i,                    // 100 MHz Clock, used for tiing
         input           fast_clk_i,                 // Maximum 300 MHz Clock, used for serial transfer
         input           reset_n_i,                  // Reset signal, active low
         input   [ 3:0]  en_i,                       // Enable pins input
@@ -37,11 +36,13 @@ module AD7960
 //----------- Local Parameters -------------------------------------------------
 //------------------------------------------------------------------------------
 // FPGA Clock Frequency
-parameter real          FPGA_CLOCK_FREQ         = 100;
+parameter real          FPGA_CLOCK_FREQ         = 200; // MHz
 
 // Conversion signal generation
-parameter real          TCYC                    = 0.200;
+parameter real          TCYC                    = 0.200; // ms
 parameter       [31:0]  ADC_CYC_CNT             = FPGA_CLOCK_FREQ * TCYC - 1;
+parameter real          TCNVH                   = 0.040; // ms
+parameter       [31:0]  ADC_CNVH_CNT            = FPGA_CLOCK_FREQ * TCNVH - 1;
 
 // Serial Interface
 parameter               SERIAL_IDLE_STATE       = 3'b001;
@@ -73,15 +74,15 @@ wire         sdi_s;
 //----------- Assign/Always Blocks ---------------------------------------------
 //------------------------------------------------------------------------------
 assign clk_s            = ((serial_present_state == SERIAL_READ_STATE)&&(sclk_cnt > 5'd0)&&(buffer_reset_s != 1'b1)) ? 1'b1 : 1'b0;  
+assign data_rd_rdy_o    = (adc_tcyc_cnt == 0)  ? 1'b1 : 1'b0; 
+assign cnv_s            = (adc_tcyc_cnt >= (ADC_CYC_CNT-ADC_CNVH_CNT)) ? 1'b1 : 1'b0;
+assign tmsb_done_s      = (adc_tcyc_cnt == (ADC_CYC_CNT-ADC_CNVH_CNT-1)) ? 1'b1 : 1'b0;
+assign buffer_reset_s   = (adc_tcyc_cnt == ADC_CYC_CNT-1)  ? 1'b1 : 1'b0;
 assign en_o             = en_i;
-assign data_rd_rdy_o    = ((serial_read_done_s == 1'b1) && (adc_tcyc_cnt == 32'd4)) ? 1'b1 : 1'b0; 
-assign cnv_s            = (adc_tcyc_cnt > 32'd17) ? 1'b1 : 1'b0;
-assign tmsb_done_s      = (adc_tcyc_cnt == 32'd18) ? 1'b1 : 1'b0;
-assign buffer_reset_s   = (adc_tcyc_cnt == 32'd2) ? 1'b1 : 1'b0;
 
 
 // Update conversion timing counters 
-always @(posedge m_clk_i)
+always @(posedge fast_clk_i)
 begin
     if(reset_n_i == 1'b0)
     begin
@@ -200,23 +201,9 @@ end
 //   );
 
    // Data In LVDS -> Single
-//	ALT_INBUF_DIFF  #(.io_standard("LVDS"),
-//                     .location   ("IOBANK_7"))
-//   lvds_d (
-//      .i   (d_pos_i),
-//      .ibar(d_neg_i),
-//      .o   (sdi_s  )
-//   );
-   assign sdi_s = d_pos_i;
+   assign sdi_s  = d_pos_i;
 
    // Serial Clock In LVDS -> Single
-//	ALT_INBUF_DIFF  #(.io_standard("LVDS"),
-//                     .location   ("IOBANK_7"))
-//   lvds_dco (
-//      .i   (dco_pos_i),
-//      .ibar(dco_neg_i),
-//      .o   (sclk_s  )
-//   );
    assign sclk_s = dco_pos_i;
    
    // Conversion Out Single -> LVDS
