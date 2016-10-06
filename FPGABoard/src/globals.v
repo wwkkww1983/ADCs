@@ -36,7 +36,7 @@
    `define USB_WR_FIFOADR      `USB_FIFOADR_NBIT'b10 // end point 6
    
    ////////////////// BUFFER
-   `define BUFFER_BADDR_NBIT   6 // 2^3 X 512bytes  
+   `define BUFFER_BADDR_NBIT   5 // 2^3 X 512bytes  
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    
@@ -54,10 +54,9 @@
    `define AD_SP_START_IDX     13
    `define AD_MCLK_RATE        100000              // unit(1KHz)
    `define AD_SPCLK_RATE       1000                // unit(1KHz)
-   `define AD_SPCLK_DELAY      0
+   `define AD_SPCLK_DELAY      1
 
-   `define AD_AVG_EN           1'b0
-   `define AD_AVG_NUM_NBIT     2
+   `define AD_AVG_NUM_NBIT     0       // 2^N - 1
    
    `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v), bandwidth 28MHz
    `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v), bandwidth 28MHz

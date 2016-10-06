@@ -113,6 +113,7 @@ module top
    wire                      ad_cache_sync;
    wire                      ad_cache_spclk;
    wire                      ad_cache_wclk;
+   wire                      ad_cache_start;
 
 `ifdef DEBUG
    reg                       ad_cache_wr;   
@@ -147,7 +148,7 @@ module top
    (
       .fast_clk_i   (ad_fast_clk   ),
       .reset_n_i    (`HIGH         ),
-      .start_i      (ad_cache_spclk),
+      .start_i      (ad_cache_start),
       .en_i         (`AD_MODE_REF2 ),
       .d_pos_i      (D             ),
       .dco_pos_i    (DCO           ),
@@ -167,6 +168,7 @@ module top
       .sync  (ad_cache_sync  ),
       .spclk (ad_cache_spclk ),
       .wclk  (ad_cache_wclk  ),
+      .wstart(ad_cache_start ),
       .wr    (ad_cache_wr    ),
       .wdata (ad_cache_wdata ),
       .rclk  (mclk           ),

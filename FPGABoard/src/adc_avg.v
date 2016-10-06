@@ -71,15 +71,12 @@ module adc_avg
          o_strobe <= `LOW;
          if(i_strobe) begin
             avg_cnt  <= avg_cnt + 1'b1;
-            sum_data <= sum_data + i_inst_data;
-            if(avg_cnt=={`AD_AVG_NUM_NBIT{1'b1}}) begin
+            sum_data <= avg_cnt==0 ? i_inst_data : sum_data + i_inst_data;
+            if(avg_cnt==2**`AD_AVG_NUM_NBIT-1) begin
                o_strobe <= `HIGH;
-               avg_cnt  <= avg_cnt;
+               avg_cnt  <= 0;
             end
          end
-         
-         if(o_strobe)
-            sum_data <= sum_data + i_inst_data - rg_inst_data[2**`AD_AVG_NUM_NBIT-1];
       end
    end
    

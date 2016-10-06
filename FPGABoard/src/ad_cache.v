@@ -23,6 +23,7 @@ module ad_cache
    sync,
    spclk,
    wclk,
+   wstart,
    wr,
    wdata,
    rclk,
@@ -36,6 +37,7 @@ module ad_cache
    input                       sync;
    input                       spclk;
    input                       wclk;
+   output                      wstart;
    input                       wr;
    input  [`AD_DATA_NBIT-1:0]  wdata;
    input                       rclk;
@@ -46,29 +48,48 @@ module ad_cache
    ////////////////// ARCH ////////////////////
 
    ////////////////// Average
-   wire                         avg_wr  ;
-   wire [`AD_DATA_NBIT-1:0]     avg_data;
-   wire                         avg_rst;
-   
-   assign avg_rst = p_sync[2:1]==2'b01;
-   
-   generate
-      if(`AD_AVG_EN) begin: ad_average
-         adc_avg adc_avg_u
-         (
-            .clk        (wclk    ),
-            .rst        (avg_rst ),
-            .i_strobe   (wr      ),
-            .i_inst_data(wdata   ),
-            .o_strobe   (avg_wr  ),
-            .o_avg_data (avg_data)
-         );
+   wire                             avg_wr  ;
+   wire [`AD_DATA_NBIT-1:0]         avg_data;
+   wire                             avg_rst;
+   reg  [2**`AD_AVG_NUM_NBIT-1 : 0] avg_cnt;
+   reg                              wstart;
+
+   assign avg_rst = (p_sync[2:1]==2'b01) || (p_spclk[2:1]==2'b01);
+
+   always@(posedge wclk) begin
+      // SPCLK Delay
+      p_spclk <= {p_spclk[1:0],spclk};
+      if(p_spclk[2:1]==2'b01) begin
+         spclk_dly_cnt <= `AD_SP_NBIT'd`AD_SPCLK_DELAY;
+         spclk_dly_en  <= `HIGH;
       end
-      else begin: ad_instant
-         assign avg_wr   = wr;
-         assign avg_data = wdata;
+      else if(spclk_dly_cnt>0)
+         spclk_dly_cnt <= spclk_dly_cnt - 1'b1;
+      else
+         spclk_dly_en <= `LOW;
+      
+      // Average Count
+      if(spclk_dly_en&(spclk_dly_cnt==0)) begin
+         avg_cnt <= 2**`AD_AVG_NUM_NBIT-1;
+         wstart  <= `HIGH;
       end
-   endgenerate
+      else if(avg_cnt>0) begin
+         if(wr&wstart)
+            avg_cnt <= avg_cnt - 1'b1;
+      end
+      else
+         wstart  <= `LOW;      
+   end
+
+   adc_avg adc_avg_u
+   (
+      .clk        (wclk    ),
+      .rst        (avg_rst ),
+      .i_strobe   (wr      ),
+      .i_inst_data(wdata   ),
+      .o_strobe   (avg_wr  ),
+      .o_avg_data (avg_data)
+   );
    
    ////////////////// WRITE   
    reg  [`AD_CHE_ADDR_NBIT-1:0] waddr;
@@ -77,31 +98,34 @@ module ad_cache
    reg  [`AD_CHE_ADDR_NBIT:0]   buf_waddr;
    reg  [`AD_CHE_DATA_NBIT-1:0] buf_wdata;
    reg  [2:0]                   p_sync;
-//   reg  [`AD_SPCLK_DELAY+3:0]   p_spclk;
+   reg  [2:0]                   p_spclk;
    reg  [`AD_SP_NBIT-1:0]       spclk_cnt;
+   reg  [`AD_SP_NBIT-1:0]       spclk_dly_cnt;
+   reg                          spclk_dly_en;
    reg                          cache_wr;
    reg                          cache_wcnt;
    reg                          cache_en;
    
    always@(posedge wclk) begin
+      // SYNC Detect
       p_sync  <= {p_sync[1:0],sync};
+         
+      // Data Cache
       cache_wr <= `LOW;
       if(avg_wr) begin
-//         p_spclk <= {p_spclk[`AD_SPCLK_DELAY+2:0],spclk};
-//         if((p_spclk[`AD_SPCLK_DELAY+3:`AD_SPCLK_DELAY+2]==2'b01)) begin
-            spclk_cnt <= spclk_cnt + 1'b1;
-            if((spclk_cnt>=`AD_SP_START_IDX)&&(spclk_cnt<`AD_SP_START_IDX+`AD_SP_NUM)) begin
-               buf_wdata <= {buf_wdata[`AD_CHE_DATA_NBIT-25:0],{{24-`AD_DATA_NBIT{avg_data[`AD_DATA_NBIT-1]}},avg_data}};
-               cache_wcnt <= cache_wcnt + 1'b1;
-               if(cache_wcnt==1)
-                  cache_wr  <= `HIGH;
-            end
-            else if(spclk_cnt==`AD_SP_START_IDX+`AD_SP_NUM) begin
-               spclk_cnt <= spclk_cnt;
-            end
-//         end
+         spclk_cnt <= spclk_cnt + 1'b1;
+         if((spclk_cnt>=`AD_SP_START_IDX)&&(spclk_cnt<`AD_SP_START_IDX+`AD_SP_NUM)) begin
+            buf_wdata <= {buf_wdata[`AD_CHE_DATA_NBIT-25:0],{{24-`AD_DATA_NBIT{avg_data[`AD_DATA_NBIT-1]}},avg_data}};
+            cache_wcnt <= cache_wcnt + 1'b1;
+            if(cache_wcnt==1)
+               cache_wr  <= `HIGH;
+         end
+         else if(spclk_cnt==`AD_SP_START_IDX+`AD_SP_NUM) begin
+            spclk_cnt <= spclk_cnt;
+         end
       end
       
+      // Reset all register when SYNC
       if(p_sync[2:1]==2'b01) begin // reset counter at the posedge of SYNC
          spclk_cnt  <= 0;
          cache_wr   <= `LOW;
@@ -110,6 +134,7 @@ module ad_cache
          buf_wdata  <= 0;
       end
       
+      // Cache data into RAM
       buf_wr    <= `LOW;
       buf_waddr <= {wswitch,waddr};
       if(cache_en) begin

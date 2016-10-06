@@ -43,7 +43,7 @@ module AD7960
 parameter real FPGA_CLOCK_FREQ = 200; // MHz
 
 // Conversion signal generation
-parameter real TCYC            = 0.320; // ms
+parameter real TCYC            = 0.200; // ms
 parameter real TCNVH           = 0.030; // ms
 parameter real TMSB            = 0.180; // ms
 
@@ -113,22 +113,19 @@ assign buffer_reset_s   = (adc_tcyc_cnt == (ADC_CYC_CNT-ADC_MSB_CNT+1))  ? 1'b1 
 assign en_o             = en_i;
 
 // Update conversion timing counters 
-reg  [`AD_SPCLK_DELAY+3:0]   p_start;
 always @(posedge fast_clk_i)
 begin
     if(reset_n_i == 1'b0)
     begin
         adc_tcyc_cnt <= ADC_CYC_CNT;
-        p_start <= 0;
     end
     else
     begin
-        p_start <= {p_start[`AD_SPCLK_DELAY+2:0],start_i};
-        if((p_start[`AD_SPCLK_DELAY+3:`AD_SPCLK_DELAY+2]==2'b01)) begin
-            adc_tcyc_cnt <= ADC_CYC_CNT; 
-        end
-        else if(adc_tcyc_cnt != 0) begin
+        if(adc_tcyc_cnt != 0) begin
             adc_tcyc_cnt <= adc_tcyc_cnt - 1'd1;
+        end
+        else if(start_i) begin
+            adc_tcyc_cnt <= ADC_CYC_CNT;
         end
     end
 end 
@@ -196,7 +193,7 @@ begin
 end
 
 // Count SCLK signals Out
-always @(posedge fast_clk_i or posedge buffer_reset_s)
+always @(posedge fast_clk_i)
 begin
     if(buffer_reset_s == 1'b1)
     begin  
