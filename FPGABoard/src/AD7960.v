@@ -1,3 +1,6 @@
+/////////////////////////// INCLUDE /////////////////////////////
+`include "../src/globals.v"
+
 ////////////////////////////////////////////////////////////////
 //
 //  Module  : AD7960
@@ -20,6 +23,7 @@ module AD7960
     (
         input           fast_clk_i,                 // Maximum 300 MHz Clock, used for serial transfer
         input           reset_n_i,                  // Reset signal, active low
+        input           start_i,                    // Start signal, active high
         input   [ 3:0]  en_i,                       // Enable pins input
         input           d_pos_i,                    // Data In, Positive Pair
         input           dco_pos_i,                  // Echoed Clock In, Positive Pair
@@ -36,14 +40,42 @@ module AD7960
 //----------- Local Parameters -------------------------------------------------
 //------------------------------------------------------------------------------
 // FPGA Clock Frequency
-parameter real          FPGA_CLOCK_FREQ         = 200; // MHz
+parameter real FPGA_CLOCK_FREQ = 200; // MHz
 
 // Conversion signal generation
-parameter real          TCYC                    = 0.200; // ms
-parameter       [31:0]  ADC_CYC_CNT             = FPGA_CLOCK_FREQ * TCYC - 1;
-parameter real          TCNVH                   = 0.040; // ms
-parameter       [31:0]  ADC_CNVH_CNT            = FPGA_CLOCK_FREQ * TCNVH - 1;
+parameter real TCYC            = 0.320; // ms
+parameter real TCNVH           = 0.030; // ms
+parameter real TMSB            = 0.180; // ms
 
+`ifndef AD_TIME
+parameter [8:0]  ADC_CYC_CNT  = FPGA_CLOCK_FREQ * TCYC - 1;
+parameter [8:0]  ADC_CNVH_CNT = FPGA_CLOCK_FREQ * TCNVH - 1;
+parameter [8:0]  ADC_MSB_CNT  = FPGA_CLOCK_FREQ * TMSB - 1;
+`else
+reg  [8:0]  ADC_CYC_CNT  = FPGA_CLOCK_FREQ * TCYC - 1;
+reg  [8:0]  ADC_CNVH_CNT = FPGA_CLOCK_FREQ * TCNVH - 1;
+reg  [8:0]  ADC_MSB_CNT  = FPGA_CLOCK_FREQ * TMSB - 1;
+
+// Initialize time parameter of AD7960
+wire        ad_time_wr;
+reg  [1:0]  ad_time_addr;
+wire [8:0]  ad_time_data;
+ad_time  ad_time_u (
+   .address(ad_time_addr),
+   .clock  (fast_clk_i  ),
+   .q      (ad_time_data)
+);
+always@(posedge fast_clk_i) begin
+   ad_time_addr <= ad_time_addr + 1'b1;
+   if(ad_time_addr==2)
+      ADC_CYC_CNT <= ad_time_data;
+   if(ad_time_addr==3)
+      ADC_CNVH_CNT <= ad_time_data;
+   if(ad_time_addr==0)
+      ADC_MSB_CNT <= ad_time_data;
+end
+`endif
+      
 // Serial Interface
 parameter               SERIAL_IDLE_STATE       = 3'b001;
 parameter               SERIAL_READ_STATE       = 3'b010;
@@ -52,7 +84,7 @@ parameter               SERIAL_DONE_STATE       = 3'b100;
 //------------------------------------------------------------------------------
 //----------- Registers Declarations -------------------------------------------
 //------------------------------------------------------------------------------ 
-reg  [31:0]  adc_tcyc_cnt;
+reg  [ 8:0]  adc_tcyc_cnt;
 reg  [ 2:0]  serial_present_state;
 reg  [ 2:0]  serial_next_state;
 reg  [ 4:0]  sclk_cnt;
@@ -74,29 +106,29 @@ wire         sdi_s;
 //----------- Assign/Always Blocks ---------------------------------------------
 //------------------------------------------------------------------------------
 assign clk_s            = ((serial_present_state == SERIAL_READ_STATE)&&(sclk_cnt > 5'd0)&&(buffer_reset_s != 1'b1)) ? 1'b1 : 1'b0;  
-assign data_rd_rdy_o    = (adc_tcyc_cnt == 0)  ? 1'b1 : 1'b0; 
+assign data_rd_rdy_o    = serial_read_done_s; 
 assign cnv_s            = (adc_tcyc_cnt >= (ADC_CYC_CNT-ADC_CNVH_CNT)) ? 1'b1 : 1'b0;
-assign tmsb_done_s      = (adc_tcyc_cnt == (ADC_CYC_CNT-ADC_CNVH_CNT-1)) ? 1'b1 : 1'b0;
-assign buffer_reset_s   = (adc_tcyc_cnt == ADC_CYC_CNT-1)  ? 1'b1 : 1'b0;
+assign tmsb_done_s      = (adc_tcyc_cnt == (ADC_CYC_CNT-ADC_MSB_CNT))  ? 1'b1 : 1'b0;
+assign buffer_reset_s   = (adc_tcyc_cnt == (ADC_CYC_CNT-ADC_MSB_CNT+1))  ? 1'b1 : 1'b0;
 assign en_o             = en_i;
 
-
 // Update conversion timing counters 
+reg  [`AD_SPCLK_DELAY+3:0]   p_start;
 always @(posedge fast_clk_i)
 begin
     if(reset_n_i == 1'b0)
     begin
         adc_tcyc_cnt <= ADC_CYC_CNT;
+        p_start <= 0;
     end
     else
     begin
-        if(adc_tcyc_cnt != 32'd0)
-        begin
-            adc_tcyc_cnt <= adc_tcyc_cnt - 32'd1;
-        end
-        else
-        begin
+        p_start <= {p_start[`AD_SPCLK_DELAY+2:0],start_i};
+        if((p_start[`AD_SPCLK_DELAY+3:`AD_SPCLK_DELAY+2]==2'b01)) begin
             adc_tcyc_cnt <= ADC_CYC_CNT; 
+        end
+        else if(adc_tcyc_cnt != 0) begin
+            adc_tcyc_cnt <= adc_tcyc_cnt - 1'd1;
         end
     end
 end 
@@ -145,7 +177,7 @@ begin
         case(serial_present_state)
             SERIAL_IDLE_STATE:
                 begin
-                    serial_read_done_s <= 1'b1;
+                    serial_read_done_s <= 1'b0;
                 end
             SERIAL_READ_STATE:
                 begin
@@ -176,50 +208,44 @@ begin
     end
 end
 
-   // Shift Data In
-   always @(posedge sclk_s or posedge buffer_reset_s)
-   begin
-       if(buffer_reset_s == 1'b1)
-       begin
-           serial_buffer <= 18'b111111111111111111;
-           sclk_echo_cnt <= 5'd18; 
-       end
-       else if(sclk_echo_cnt > 5'd0)
-       begin
-           sclk_echo_cnt <= sclk_echo_cnt - 5'd1;
-           serial_buffer <= {serial_buffer[16:0], sdi_s};
-       end
-   end
+// Shift Data In
+
+// Data In LVDS -> Single
+assign sdi_s  = d_pos_i;
+
+// Serial Clock In LVDS -> Single
+assign sclk_s = dco_pos_i;
+
+always @(posedge sclk_s or posedge buffer_reset_s)
+begin
+    if(buffer_reset_s == 1'b1)
+    begin
+        serial_buffer <= 18'b111111111111111111;
+        sclk_echo_cnt <= 5'd18; 
+    end
+    else if(sclk_echo_cnt > 5'd0)
+    begin
+        sclk_echo_cnt <= sclk_echo_cnt - 5'd1;
+        serial_buffer <= {serial_buffer[16:0], sdi_s};
+    end
+end
    
-   assign data_o = serial_buffer;
-
-//   lvds_rx	data_shift_in (
-//   	.rx_data_reset (buffer_reset_s),
-//   	.rx_in         (sdi_s         ),
-//   	.rx_inclock    (sclk_s        ),
-//   	.rx_out        (data_o        )
-//   );
-
-   // Data In LVDS -> Single
-   assign sdi_s  = d_pos_i;
-
-   // Serial Clock In LVDS -> Single
-   assign sclk_s = dco_pos_i;
+assign data_o = serial_buffer;
    
-   // Conversion Out Single -> LVDS
-	ALT_OUTBUF_DIFF #(.io_standard("LVDS_E_3R"))
-	lvds_cnv (
-	   .i   (cnv_s    ),
-	   .o   (cnv_pos_o),
-	   .obar(cnv_neg_o)
-	);
+// Conversion Out Single -> LVDS
+ALT_OUTBUF_DIFF #(.io_standard("LVDS_E_3R"))
+lvds_cnv (
+   .i   (cnv_s    ),
+   .o   (cnv_pos_o),
+   .obar(cnv_neg_o)
+);
 
-   // Clock Out Single -> LVDS    
-	ALT_OUTBUF_DIFF #(.io_standard("LVDS_E_3R"))
-	lvds_clk (
-	   .i   (fast_clk_i & clk_s),
-	   .o   (clk_pos_o),
-	   .obar(clk_neg_o)
-	);
+// Clock Out Single -> LVDS    
+ALT_OUTBUF_DIFF #(.io_standard("LVDS_E_3R"))
+lvds_clk (
+   .i   (fast_clk_i & clk_s),
+   .o   (clk_pos_o),
+   .obar(clk_neg_o)
+);
 
 endmodule

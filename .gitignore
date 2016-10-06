@@ -16,3 +16,6 @@
 /FPGABoard/prj/adcs.qws
 /ADCBoard/adc18b_brd.DESKTOP-L06O4HL.Hoki.pui
 /FPGABoard/ADCLVDS.HWORKS.Hoki.pui
+/FPGABoard/prj/*.bak
+/FPGABoard/src/*.bak
+/FPGABoard/ADCLVDS.DESKTOP-MAA3RTM.Hoki.pui

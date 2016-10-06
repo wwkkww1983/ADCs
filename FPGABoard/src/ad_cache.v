@@ -77,7 +77,7 @@ module ad_cache
    reg  [`AD_CHE_ADDR_NBIT:0]   buf_waddr;
    reg  [`AD_CHE_DATA_NBIT-1:0] buf_wdata;
    reg  [2:0]                   p_sync;
-   reg  [`AD_SPCLK_DELAY+3:0]   p_spclk;
+//   reg  [`AD_SPCLK_DELAY+3:0]   p_spclk;
    reg  [`AD_SP_NBIT-1:0]       spclk_cnt;
    reg                          cache_wr;
    reg                          cache_wcnt;
@@ -87,8 +87,8 @@ module ad_cache
       p_sync  <= {p_sync[1:0],sync};
       cache_wr <= `LOW;
       if(avg_wr) begin
-         p_spclk <= {p_spclk[`AD_SPCLK_DELAY+2:0],spclk};
-         if((p_spclk[`AD_SPCLK_DELAY+3:`AD_SPCLK_DELAY+2]==2'b01)) begin
+//         p_spclk <= {p_spclk[`AD_SPCLK_DELAY+2:0],spclk};
+//         if((p_spclk[`AD_SPCLK_DELAY+3:`AD_SPCLK_DELAY+2]==2'b01)) begin
             spclk_cnt <= spclk_cnt + 1'b1;
             if((spclk_cnt>=`AD_SP_START_IDX)&&(spclk_cnt<`AD_SP_START_IDX+`AD_SP_NUM)) begin
                buf_wdata <= {buf_wdata[`AD_CHE_DATA_NBIT-25:0],{{24-`AD_DATA_NBIT{avg_data[`AD_DATA_NBIT-1]}},avg_data}};
@@ -99,7 +99,7 @@ module ad_cache
             else if(spclk_cnt==`AD_SP_START_IDX+`AD_SP_NUM) begin
                spclk_cnt <= spclk_cnt;
             end
-         end
+//         end
       end
       
       if(p_sync[2:1]==2'b01) begin // reset counter at the posedge of SYNC

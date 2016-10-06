@@ -20,7 +20,7 @@ module top
 (
    // Clock Source
    CLK1,
-	CLK2,
+   CLK2,
    OE,
    // SYNC
    IN_SYNC,
@@ -50,7 +50,7 @@ module top
 
    ////////////////// PORT ////////////////////
    input                          CLK1; // 48MHz
-	input								    CLK2; // 50MHz
+   input                          CLK2; // 50MHz
    output                         OE;
    
    input                          IN_SYNC;    // frame sync input
@@ -88,59 +88,41 @@ module top
    ////////////////// Clock Generation
    
    // PLL for USB
-	wire   usb_clk;   // 48MHz
+   wire   usb_clk;   // 48MHz
    wire   mclk;      // 100MHz
-   usb_pll	usb_pll_u(
-   	.inclk0 (CLK1      ),
-   	.c0     (USB_XTALIN),
-   	.c1     (USB_IFCLK ),
-   	.c2     (mclk      )
-	);
-	
-	assign usb_clk = ~USB_IFCLK;
-	
-	// PLL for ADC
-   wire   ad_fast_clk; // 300MHz
-	
-   adc_pll_ext adc_pll_u(
-   	.inclk0(mclk),
-   	.c0(ad_fast_clk));
-
-	////////////////// AD7960 controller
-   wire                     ad_dv;
-   wire [`AD_DATA_NBIT-1:0] ad_db;
-
-   AD7960 AD7960_U
-   (
-      .fast_clk_i   (ad_fast_clk  ),
-      .reset_n_i    (`HIGH        ),      
-      .en_i         (`AD_MODE_REF2),      
-      .d_pos_i      (D            ),
-      .dco_pos_i    (DCO          ),
-      .en_o         (AD_EN        ),           
-      .cnv_pos_o    (CNV          ),
-      .cnv_neg_o    (),   
-      .clk_pos_o    (AD_CLK       ),
-      .clk_neg_o    (),
-      .data_rd_rdy_o(ad_dv        ),
-      .data_o       (ad_db        )
+   usb_pll  usb_pll_u(
+      .inclk0 (CLK1      ),
+      .c0     (USB_XTALIN),
+      .c1     (USB_IFCLK ),
+      .c2     (mclk      )
    );
+   
+   assign usb_clk = ~USB_IFCLK;
+   
+   // PLL for ADC
+   wire   ad_fast_clk; // 300MHz
+   
+   adc_pll_ext adc_pll_u(
+      .inclk0(CLK2),
+      .c0(ad_fast_clk));
+
+   ////////////////// AD7960 controller
 
    wire [`USB_DATA_NBIT-1:0] ad_cache_rdata;
    wire                      ad_cache_switch;
    wire                      ad_cache_sync;
    wire                      ad_cache_spclk;
-	wire                      ad_cache_wclk;
+   wire                      ad_cache_wclk;
 
 `ifdef DEBUG
    reg                       ad_cache_wr;   
    wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
    reg  [`AD_DATA_NBIT-1:0]  wdata;
-	
-	assign ad_cache_sync  = OUT_SYNC;
-	assign ad_cache_spclk = OUT_SPCLK;
-	assign ad_cache_wclk  = ad_dv;
-	assign ad_cache_wdata = wdata;
+   
+   assign ad_cache_sync  = OUT_SYNC;
+   assign ad_cache_spclk = OUT_SPCLK;
+   assign ad_cache_wclk  = ad_dv;
+   assign ad_cache_wdata = wdata;
    
    reg  [2:0]              p_ad_cache_spclk;
    always@(posedge ad_cache_wclk) begin
@@ -152,12 +134,31 @@ module top
 `else 
    wire                      ad_cache_wr;   
    wire [`AD_DATA_NBIT-1:0]  ad_cache_wdata;
+   wire                      ad_dv;
+   wire [`AD_DATA_NBIT-1:0]  ad_db;
    
    assign ad_cache_sync  = IN_SYNC;
-	assign ad_cache_spclk = IN_SPCLK;
-	assign ad_cache_wclk  = ad_dv;
-   assign ad_cache_wr    = `HIGH;
+   assign ad_cache_spclk = IN_SPCLK;
+   assign ad_cache_wclk  = ad_fast_clk;
+   assign ad_cache_wr    = ad_dv;
    assign ad_cache_wdata = ad_db;
+
+   AD7960 AD7960_U
+   (
+      .fast_clk_i   (ad_fast_clk   ),
+      .reset_n_i    (`HIGH         ),
+      .start_i      (ad_cache_spclk),
+      .en_i         (`AD_MODE_REF2 ),
+      .d_pos_i      (D             ),
+      .dco_pos_i    (DCO           ),
+      .en_o         (AD_EN         ),           
+      .cnv_pos_o    (CNV           ),
+      .cnv_neg_o    (),
+      .clk_pos_o    (AD_CLK        ),
+      .clk_neg_o    (),
+      .data_rd_rdy_o(ad_dv         ),
+      .data_o       (ad_db         )
+   );
 `endif
    
    ad_cache u_ad_cache

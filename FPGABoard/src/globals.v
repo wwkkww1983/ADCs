@@ -13,6 +13,7 @@
 // 
 //  Revision: 1.0
 //   `define DEBUG               1'b1  // using simulate SYNC, SPCLK, AD_CLK, AD_DB
+//   `define AD_TIME             1'b1
    
    `define HIGH                1'b1
    `define LOW                 1'b0
@@ -39,7 +40,7 @@
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    
-   ////////////////// LTC2387
+   ////////////////// AD7960
    `define AD_DATA_NBIT        18
    `define AD_CHN_NBIT         3                   // channel 
    `define AD_CHN_NUM          8                   // channel number
@@ -60,6 +61,8 @@
    
    `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v), bandwidth 28MHz
    `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v), bandwidth 28MHz
+   `define AD_MODE_REF3        4'b1101 // use REFIN=2.048v OR (REFIN=0v & REF=5v), bandwidth 9MHz
+   `define AD_MODE_REF4        4'b1110 // use (REFIN=0v & REF=4.096v), bandwidth 9MHz
    `define AD_MODE_TEST        4'b0100
 
    `define AD_MODE_SLEEP       4'b1111
