@@ -142,7 +142,7 @@ set_location_assignment PIN_D12 -to D
 set_location_assignment PIN_D11 -to "D(n)"
 set_location_assignment PIN_B8 -to IN_SPCLK
 set_location_assignment PIN_A8 -to IN_SYNC
-set_location_assignment PIN_E8 -to OUT_DATA
+set_location_assignment PIN_F8 -to OUT_DATA
 set_location_assignment PIN_D8 -to OUT_SPCLK
 set_location_assignment PIN_C8 -to OUT_SYNC
 set_global_assignment -name MIF_FILE ../src/ad_time.mif

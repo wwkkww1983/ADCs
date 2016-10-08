@@ -57,7 +57,7 @@ module adc_avg
    end
    endgenerate
    
-   reg  [`AD_AVG_NUM_NBIT-1:0]               avg_cnt=0;
+   reg  [`AD_AVG_CNT_NBIT-1:0]               avg_cnt=0;
    reg  [`AD_AVG_NUM_NBIT+`AD_DATA_NBIT-1:0] sum_data=0;
    reg                                       o_strobe;
    

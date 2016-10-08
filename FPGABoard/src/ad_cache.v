@@ -28,6 +28,7 @@ module ad_cache
    wdata,
    rclk,
    rd,
+   rcnt,
    rdata,
    switch
 );
@@ -42,6 +43,7 @@ module ad_cache
    input  [`AD_DATA_NBIT-1:0]  wdata;
    input                       rclk;
    input                       rd;
+   output [`AD_CNT_NBIT-1:0]   rcnt;
    output [`USB_DATA_NBIT-1:0] rdata;
    output                      switch;
 
@@ -51,7 +53,7 @@ module ad_cache
    wire                             avg_wr  ;
    wire [`AD_DATA_NBIT-1:0]         avg_data;
    wire                             avg_rst;
-   reg  [2**`AD_AVG_NUM_NBIT-1 : 0] avg_cnt;
+   reg  [`AD_AVG_CNT_NBIT-1:0]      avg_cnt;
    reg                              wstart;
 
    assign avg_rst = (p_sync[2:1]==2'b01) || (p_spclk[2:1]==2'b01);
@@ -70,7 +72,7 @@ module ad_cache
       
       // Average Count
       if(spclk_dly_en&(spclk_dly_cnt==0)) begin
-         avg_cnt <= 2**`AD_AVG_NUM_NBIT-1;
+         avg_cnt <= (`AD_AVG_CNT_NBIT'd1 << `AD_AVG_NUM_NBIT)-1'b1;
          wstart  <= `HIGH;
       end
       else if(avg_cnt>0) begin
@@ -179,6 +181,7 @@ module ad_cache
    wire [`AD_CHE_ADDR_NBIT:0]   buf_raddr;
    reg  [`AD_CHE_DATA_NBIT-1:0] sf_data;
    reg  [1:0]                   sf_en;
+   reg  [`AD_CNT_NBIT-1:0]      rcnt;
    
    assign buf_raddr = {~pp_wswitch[2],raddr};
    
@@ -200,10 +203,15 @@ module ad_cache
             raddr <= raddr + 1'b1;
       end
       
-      if(^pp_wswitch[2:1]) begin
+      if(^pp_wswitch[2:1]|~en) begin
          raddr <= 0;
          cache_rcnt <= 0;
+         if(en)
+            rcnt <= rcnt + 1'b1;
       end
+      
+      if(~en)
+         rcnt <= 0;
    end
 
    assign rdata = sf_data[`AD_CHE_DATA_NBIT-1:`AD_CHE_DATA_NBIT-`USB_DATA_NBIT];

@@ -54,9 +54,10 @@
    `define AD_SP_START_IDX     13
    `define AD_MCLK_RATE        100000              // unit(1KHz)
    `define AD_SPCLK_RATE       1000                // unit(1KHz)
-   `define AD_SPCLK_DELAY      1
-
-   `define AD_AVG_NUM_NBIT     0       // 2^N - 1
+   `define AD_SPCLK_DELAY      0                   // unit(1/200MHz)
+   
+   `define AD_AVG_CNT_NBIT     3
+   `define AD_AVG_NUM_NBIT     0                   // 2^N, 0 - one sample, 1 - two samples
    
    `define AD_MODE_REF1        4'b1001 // use REFIN=2.048v OR (REFIN=0v & REF=5v), bandwidth 28MHz
    `define AD_MODE_REF2        4'b1010 // use (REFIN=0v & REF=4.096v), bandwidth 28MHz

@@ -23,6 +23,7 @@ module cmd_decode
    mclk,
    ad_rd,
    ad_data,
+   ad_cnt,
    ad_switch,
    ad_chn,
    ad_acq_en,
@@ -42,6 +43,7 @@ module cmd_decode
    input                           mclk;   // main clock 48MHz
    output                          ad_rd;
    input  [`USB_DATA_NBIT-1:0]     ad_data;
+   input  [`AD_CNT_NBIT-1:0]       ad_cnt;
    input                           ad_switch;
    output [`AD_CHN_NBIT-1:0]       ad_chn;
    output                          ad_acq_en;
@@ -141,7 +143,6 @@ module cmd_decode
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_type;
    reg  [`MSG_STR_NBIT-1:0]       tx_msg_pf;
    reg  [`MSG_STR_NBIT-1:0]       tx_pf_code;
-   reg  [`AD_CNT_NBIT-1:0]        tx_adc_cnt;
    reg  [`AD_CHN_NBIT-1:0]        ad_chn;
    reg  [2:0]                     p_fsm_rx_eop;
    reg  [2:0]                     p_ad_switch;
@@ -164,20 +165,16 @@ module cmd_decode
             tx_msg_type  <= `MSG_TYPE_START;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_02 : `MSG_FP_CODE_01; 
-            p_ad_switch <= {p_ad_switch[1:0],ad_switch};
+            p_ad_switch  <= {p_ad_switch[1:0],ad_switch};
             proc_acq_start <= ^p_ad_switch[2:1];
-            if(^p_ad_switch[2:1]) begin
-            	tx_adc_cnt <= tx_adc_cnt + 1'b1;
-            end
-            ad_acq_en <= `HIGH;
-            ad_chn    <= rx_ch_addr[`AD_CHN_NBIT-1:0];
+            ad_acq_en    <= `HIGH;
+            ad_chn       <= rx_ch_addr[`AD_CHN_NBIT-1:0];
          end
          `MSG_TYPE_STOP: begin
             tx_msg_type  <= `MSG_TYPE_STOP;
             tx_msg_pf    <= fsm_rx_err ? `MSG_FAIL       : `MSG_PASS;
             tx_pf_code   <= fsm_rx_err ? `MSG_FP_CODE_12 : `MSG_FP_CODE_11;
             ad_acq_en    <= `LOW;
-            tx_adc_cnt   <= 0;
          end
          default:;
       endcase      
@@ -260,8 +257,8 @@ module cmd_decode
             if(tx_cnt==`AD_CHE_DATA_SIZE + `AD_CNT_NWORD + 1'b1)
             	tx_data <= ascii_ch_addr;
             else if(tx_cnt==`AD_CHE_DATA_SIZE + `AD_CNT_NWORD) begin
-            	p_adc_cnt <= tx_adc_cnt<<`USB_DATA_NBIT;
-            	tx_data   <= {tx_adc_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],tx_adc_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
+            	p_adc_cnt <= ad_cnt<<`USB_DATA_NBIT;
+            	tx_data   <= {ad_cnt[`AD_CNT_NBIT-`USB_DATA_NBIT/2-1:`AD_CNT_NBIT-`USB_DATA_NBIT],ad_cnt[`AD_CNT_NBIT-1:`AD_CNT_NBIT-`USB_DATA_NBIT/2]};
             	ad_rd     <= `HIGH;
             end
             else if(tx_cnt<`AD_CHE_DATA_SIZE + `AD_CNT_NWORD && tx_cnt>`AD_CHE_DATA_SIZE) begin

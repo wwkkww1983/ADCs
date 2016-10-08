@@ -114,6 +114,7 @@ module top
    wire                      ad_cache_spclk;
    wire                      ad_cache_wclk;
    wire                      ad_cache_start;
+   wire [`AD_CNT_NBIT-1:0]   ad_cache_cnt;
 
 `ifdef DEBUG
    reg                       ad_cache_wr;   
@@ -122,15 +123,17 @@ module top
    
    assign ad_cache_sync  = OUT_SYNC;
    assign ad_cache_spclk = OUT_SPCLK;
-   assign ad_cache_wclk  = ad_dv;
+   assign ad_cache_wclk  = ad_fast_clk;
    assign ad_cache_wdata = wdata;
    
-   reg  [2:0]              p_ad_cache_spclk;
    always@(posedge ad_cache_wclk) begin
-      ad_cache_wr    <= `HIGH;
-      p_ad_cache_spclk <= {p_ad_cache_spclk[1:0],ad_cache_spclk};
-      if(ad_cache_wr&&(p_ad_cache_spclk[2:1]==2'b01))
-         wdata <= wdata + 1'b1;
+      ad_cache_wr    <= ad_cache_start;
+      if(cmdex_ad_acq_en) begin
+         if(ad_cache_start)
+            wdata <= wdata + 1'b1;
+      end
+      else
+         wdata <= 0;
    end
 `else 
    wire                      ad_cache_wr;   
@@ -173,6 +176,7 @@ module top
       .wdata (ad_cache_wdata ),
       .rclk  (mclk           ),
       .rd    (cmdec_ad_rd    ),
+      .rcnt  (ad_cache_cnt   ),
       .rdata (ad_cache_rdata ),
       .switch(ad_cache_switch)
    );
@@ -270,6 +274,7 @@ module top
       .ad_rd    (cmdec_ad_rd      ),
       .ad_chn   (cmdec_ad_chn     ),
       .ad_data  (ad_cache_rdata   ),
+      .ad_cnt   (ad_cache_cnt     ),
       .ad_switch(ad_cache_switch  ),
       .ad_acq_en(cmdex_ad_acq_en  ),
       .rx_clk   (usb_clk          ),
@@ -334,7 +339,7 @@ module top
          OUT_SPCLK <= `LOW;
 
       // sync: 0~8 HIGH; 9~136 LOW
-      if(spclk_cnt<9) begin
+      if(spclk_cnt<1) begin
          OUT_SYNC <= `HIGH;
          if(sync_cnt>=100)
             OUT_SYNC <= `LOW;
@@ -343,7 +348,7 @@ module top
          OUT_SYNC <= `LOW;
       
       // data: 0~127 +3.3V; 128~255 0V
-      if(spclk_cnt<255) 
+      if(spclk_cnt<270) 
          OUT_DATA <= `HIGH;
       else
          OUT_DATA <= `LOW;
