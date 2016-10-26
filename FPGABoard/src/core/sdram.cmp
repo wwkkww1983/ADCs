@@ -1,0 +1,25 @@
+	component sdram is
+		port (
+			avalon_mms_address       : in    std_logic_vector(25 downto 0) := (others => 'X'); -- address
+			avalon_mms_byteenable_n  : in    std_logic_vector(3 downto 0)  := (others => 'X'); -- byteenable_n
+			avalon_mms_chipselect    : in    std_logic                     := 'X';             -- chipselect
+			avalon_mms_writedata     : in    std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
+			avalon_mms_read_n        : in    std_logic                     := 'X';             -- read_n
+			avalon_mms_write_n       : in    std_logic                     := 'X';             -- write_n
+			avalon_mms_readdata      : out   std_logic_vector(31 downto 0);                    -- readdata
+			avalon_mms_readdatavalid : out   std_logic;                                        -- readdatavalid
+			avalon_mms_waitrequest   : out   std_logic;                                        -- waitrequest
+			in_clk_clk               : in    std_logic                     := 'X';             -- clk
+			in_rst_reset_n           : in    std_logic                     := 'X';             -- reset_n
+			port_addr                : out   std_logic_vector(12 downto 0);                    -- addr
+			port_ba                  : out   std_logic_vector(1 downto 0);                     -- ba
+			port_cas_n               : out   std_logic;                                        -- cas_n
+			port_cke                 : out   std_logic;                                        -- cke
+			port_cs_n                : out   std_logic_vector(1 downto 0);                     -- cs_n
+			port_dq                  : inout std_logic_vector(31 downto 0) := (others => 'X'); -- dq
+			port_dqm                 : out   std_logic_vector(3 downto 0);                     -- dqm
+			port_ras_n               : out   std_logic;                                        -- ras_n
+			port_we_n                : out   std_logic                                         -- we_n
+		);
+	end component sdram;
+

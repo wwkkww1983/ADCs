@@ -35,6 +35,17 @@ module top
    AD_CLK,
    AD_EN,
    AD_PG,
+   // SDRAM
+   SDRAM_A,
+   SDRAM_D,
+   SDRAM_DQM,
+   SDRAM_BA,
+   SDRAM_NCS,
+   SDRAM_CKE,
+   SDRAM_NRAS,
+   SDRAM_NWE,
+   SDRAM_CLK,
+   SDRAM_NCAS,
    // USB
    USB_XTALIN,
    USB_FLAGB,
@@ -59,6 +70,17 @@ module top
    output                         OUT_SPCLK;  // simulate sample clock, 200KHz
    output                         OUT_DATA;   // simulate data
    
+   output [`SDRAM_ADDR_NBIT-1:0]  SDRAM_A;
+   inout  [`SDRAM_DATA_NBIT-1:0]  SDRAM_D;
+   output [`SDRAM_DQM_NBIT-1:0]   SDRAM_DQM;
+   output [`SDRAM_BA_NBIT-1:0]    SDRAM_BA;
+   output [`SDRAM_NCS_NBIT-1:0]   SDRAM_NCS;
+   output                         SDRAM_CKE;
+   output                         SDRAM_NRAS;
+   output                         SDRAM_NWE;
+   output                         SDRAM_CLK;
+   output                         SDRAM_NCAS;
+
    output                         USB_XTALIN; // USB PHY CPU clock, 24MHz
    input                          USB_FLAGB;  // USB PHY EP2 empty flag
    input                          USB_FLAGC;  // USB PHY EP6 full flag
@@ -89,12 +111,13 @@ module top
    
    // PLL for USB
    wire   usb_clk;   // 48MHz
-   wire   mclk;      // 100MHz
+   wire   mclk;      // 120MHz
    usb_pll  usb_pll_u(
       .inclk0 (CLK1      ),
       .c0     (USB_XTALIN),
       .c1     (USB_IFCLK ),
-      .c2     (mclk      )
+      .c2     (mclk      ),
+      .c3     (SDRAM_CLK )
    );
    
    assign usb_clk = ~USB_IFCLK;
@@ -103,8 +126,9 @@ module top
    wire   ad_fast_clk; // 300MHz
    
    adc_pll_ext adc_pll_u(
-      .inclk0(CLK2),
-      .c0(ad_fast_clk));
+      .inclk0(CLK2       ),
+      .c0    (ad_fast_clk)
+   );
 
    ////////////////// AD7960 controller
 
@@ -165,6 +189,7 @@ module top
    );
 `endif
    
+   // Data Cache
    ad_cache u_ad_cache
    (
       .en    (cmdex_ad_acq_en),
@@ -213,29 +238,7 @@ module top
    wire                          usb_rx_cache_eop ;
    // Send Data to USB PHY       
    wire [`USB_ADDR_NBIT-1:0]     usb_tx_cache_addr;
-   wire [`USB_DATA_NBIT-1:0]     usb_tx_cache_data;
-   reg                           usb_tx_cache_sop;
    
-   reg  [`BUFFER_BADDR_NBIT-1:0] usb_tx_cache_baddr;
-   reg  [2:0]                    p_cmdec_tx_eop;
-   
-   always@(posedge usb_clk) begin
-      p_cmdec_tx_eop   <= {p_cmdec_tx_eop[1:0],cmdec_tx_eop};
-      usb_tx_cache_sop <= `LOW;
-      if(p_cmdec_tx_eop[2:1]==2'b01) begin
-         if(cmdex_tx_baddr==0) begin // handshake
-            usb_tx_cache_sop   <= `HIGH;
-            usb_tx_cache_baddr <= `BUFFER_BADDR_NBIT'd0;
-         end
-         else if(~usb_ctrl_full) begin
-            usb_tx_cache_sop   <= `HIGH;
-            usb_tx_cache_baddr <= usb_tx_cache_baddr + 1'b1;
-            if(usb_tx_cache_baddr==0 || usb_tx_cache_baddr=={`BUFFER_BADDR_NBIT{1'b1}})
-               usb_tx_cache_baddr <= `BUFFER_BADDR_NBIT'd1;
-         end
-      end
-   end
-
    usb_slavefifo u_usb_slavefifo
    (
       .ifclk        (usb_clk          ),
@@ -255,10 +258,10 @@ module top
       .rx_cache_eop (usb_rx_cache_eop ),
       .tx_cache_sop (usb_tx_cache_sop ),
       .tx_cache_addr(usb_tx_cache_addr),
-      .tx_cache_data(usb_tx_cache_data)
+      .tx_cache_data(tx_buffer_rdata  )
    );
    
-   ////////////////// command decode
+   ////////////////// COMMAND DECODE
    wire                          cmdec_ad_rd;
    wire [`AD_CHN_NBIT-1:0]       cmdec_ad_chn;
    wire                          cmdec_tx_vd  ;
@@ -289,27 +292,146 @@ module top
       .tx_baddr (cmdex_tx_baddr   )
    );
 
-   ////////////////// TX BUFFER
+   ////////////////// SDRAM Controller
+   wire                         sdram_wren ;
+   wire [`BUFFER_ADDR_NBIT-1:0] sdram_waddr;
+   wire [`BUFFER_DATA_NBIT-1:0] sdram_wdata;
+   wire                         sdram_wstatus;
    
-   wire [`BUFFER_ADDR_NBIT-1:0] tx_buffer_raddr;
+   assign sdram_wren  = cmdec_tx_vd&(cmdec_tx_addr!=0); 
+   assign sdram_waddr = cmdec_tx_addr;
+   assign sdram_wdata = cmdec_tx_data;
+   
+   reg                          sdram_rd     ;
+   reg  [`BUFFER_ADDR_NBIT-1:0] sdram_raddr  ;
+   wire [`BUFFER_DATA_NBIT-1:0] sdram_rdata  ;
+   wire                         sdram_rdv    ;
+   wire                         sdram_rstatus;   
+   
+   sdram_ctrl #(`USB_DATA_NBIT,`BUFFER_ADDR_NBIT)
+   sdram_ctrl_u(
+      .clk       (mclk          ),
+      .rst_n     (`HIGH         ),
+      .wren      (sdram_wren    ),
+      .waddr     (sdram_waddr   ),
+      .wdata     (sdram_wdata   ),
+      .wstatus   (sdram_wstatus ),
+      .rd        (sdram_rd      ),
+      .raddr     (sdram_raddr   ),
+      .rdata     (sdram_rdata   ),
+      .rdv       (sdram_rdv     ),
+      .rstatus   (sdram_rstatus ),
+		.port_addr (SDRAM_A       ),
+		.port_ba   (SDRAM_BA      ),
+		.port_cas_n(SDRAM_NCAS    ),
+		.port_cke  (SDRAM_CKE     ),
+		.port_cs_n (SDRAM_NCS     ),
+		.port_dq   (SDRAM_D       ),
+		.port_dqm  (SDRAM_DQM     ),
+		.port_ras_n(SDRAM_NRAS    ),
+		.port_we_n (SDRAM_NWE     )
+   );
+	
+   ////////////////// TX BUFFER   
+   wire                      tx_buffer_wr   ;
+   reg  [`USB_ADDR_NBIT:0]   tx_buffer_waddr;
+   wire [`USB_DATA_NBIT-1:0] tx_buffer_wdata;
+   
+   assign tx_buffer_wr    = sdram_rdv;
+   assign tx_buffer_wdata = sdram_rdata;
+   
+   wire [`USB_ADDR_NBIT:0]   tx_buffer_raddr;
+   reg                       usb_tx_cache_sop;
+   reg                       usb_tx_cache_baddr;
+   wire [`USB_DATA_NBIT-1:0] tx_buffer_rdata;
+   
    assign tx_buffer_raddr = {usb_tx_cache_baddr,usb_tx_cache_addr};
 
-   buffered_ram_tdp #(`BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
-                      `BUFFER_ADDR_NBIT,`USB_DATA_NBIT,
+   buffered_ram_tdp #(`USB_ADDR_NBIT+1,`USB_DATA_NBIT,
+                      `USB_ADDR_NBIT+1,`USB_DATA_NBIT,
                       "./tx_buf_2048x16.mif")
    tx_buffer (
       .a_inclk     (mclk           ),
-      .a_in_wren   (cmdec_tx_vd    ),
-      .a_in_address(cmdec_tx_addr  ),
-      .a_in_wrdata (cmdec_tx_data  ),
+      .a_in_wren   (tx_buffer_wr   ),
+      .a_in_address(tx_buffer_addr ),
+      .a_in_wrdata (tx_buffer_data ),
       .a_out_rddata(),
       .b_inclk     (usb_clk        ),
       .b_in_wren   (`LOW           ),
       .b_in_address(tx_buffer_raddr),
       .b_in_wrdata (0),
-      .b_out_rddata(usb_tx_cache_data)
+      .b_out_rddata(tx_buffer_rdata)
    );
-      
+
+   ////////////////// DATA Flow Control
+   //
+   // ADC ACQ --> CMD DEC --> SDRAM --> TX BUFFER --> USB CTRL
+   //
+   //////////////////
+   
+   `define ST_IDLE   2'b00 
+   `define ST_CMD    2'b01
+   `define ST_SDRAM  2'b11
+   `define ST_TXBUF  2'b10
+   
+   reg  [1:0]  st;
+   reg         prev_sdram_wstatus;
+   reg         prev_sdram_rstatus;
+   
+   always@(posedge mclk) begin
+      prev_sdram_wstatus <= sdram_wstatus;
+      prev_sdram_rstatus <= sdram_rstatus;
+      usb_tx_cache_sop <= `LOW;
+      sdram_rd <= `LOW;
+      case(st) 
+         `ST_IDLE: begin
+            sdram_raddr <= {`BUFFER_BADDR_NBIT'd0,{`USB_ADDR_NBIT{1'b1}}};
+            if(cmdec_tx_vd)
+               st <= `ST_CMD;
+         end
+         `ST_CMD: begin // DATA: CMD DEC --> SDRAM
+            if(cmdex_tx_baddr!=0) begin
+               if(sdram_wstatus&~prev_sdram_wstatus) begin
+                  st <= `ST_SDRAM;
+                  sdram_rd    <= `HIGH;
+                  sdram_raddr <= sdram_raddr + 1'b1;
+               end
+               usb_tx_cache_baddr <= `HIGH;
+            end
+            else begin
+               st <= `ST_TXBUF;
+               usb_tx_cache_baddr <= `LOW;
+            end
+         end
+         `ST_SDRAM: begin // DATA: SDRAM --> TX BUFFER
+            // read data from sdram
+            if(sdram_raddr[`USB_ADDR_NBIT-1:0]!={`USB_ADDR_NBIT{1'b1}}) begin
+               sdram_rd    <= `HIGH;
+               sdram_raddr <= sdram_raddr + 1'b1;
+            end
+            
+            if(sdram_rdv)
+               tx_buffer_waddr <= tx_buffer_waddr + 1'b1;
+               
+            if(sdram_rstatus&~prev_sdram_rstatus) begin
+               st <= `ST_TXBUF;
+            end
+         end
+         `ST_TXBUF: begin // TX BUFFER --> USB CTRL
+            usb_tx_cache_sop <= `HIGH;
+            if(cmdex_tx_baddr!=0) begin
+               st <= `ST_SDRAM;
+               if(cmdex_tx_baddr==sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT])
+                  st <= `ST_IDLE;
+            end
+            else
+               st <= `ST_IDLE;
+         end
+         default:
+            st <= `ST_IDLE;
+      endcase
+   end
+         
    ////////////////// SYNC OUT
    reg  [15:0]             div;
    reg  [`AD_SP_NBIT-1:0]  sync_cnt;

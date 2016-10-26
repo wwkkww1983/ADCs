@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deploy
+ date="2016.08.01.16:13:06"
+ outputDirectory="X:/ADCs/FPGA/SDRAMCtrl/src/core/">
+ <perimeter>
+  <parameter
+     name="AUTO_GENERATION_ID"
+     type="Integer"
+     defaultValue="0"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_UNIQUE_ID"
+     type="String"
+     defaultValue=""
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_DEVICE_FAMILY"
+     type="String"
+     defaultValue="Cyclone IV E"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_DEVICE"
+     type="String"
+     defaultValue="EP4CE10F17C8"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_DEVICE_SPEEDGRADE"
+     type="String"
+     defaultValue="8"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_IN_CLK_CLOCK_RATE"
+     type="Long"
+     defaultValue="-1"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_IN_CLK_CLOCK_DOMAIN"
+     type="Integer"
+     defaultValue="-1"
+     onHdl="0"
+     affectsHdl="1" />
+  <parameter
+     name="AUTO_IN_CLK_RESET_DOMAIN"
+     type="Integer"
+     defaultValue="-1"
+     onHdl="0"
+     affectsHdl="1" />
+  <interface name="avalon_mms" kind="avalon" start="0">
+   <property name="addressAlignment" value="DYNAMIC" />
+   <property name="addressGroup" value="0" />
+   <property name="addressSpan" value="268435456" />
+   <property name="addressUnits" value="WORDS" />
+   <property name="alwaysBurstMaxBurst" value="false" />
+   <property name="associatedClock" value="in_clk" />
+   <property name="associatedReset" value="in_rst" />
+   <property name="bitsPerSymbol" value="8" />
+   <property name="bridgedAddressOffset" value="0" />
+   <property name="bridgesToMaster" value="" />
+   <property name="burstOnBurstBoundariesOnly" value="false" />
+   <property name="burstcountUnits" value="WORDS" />
+   <property name="constantBurstBehavior" value="false" />
+   <property name="explicitAddressSpan" value="0" />
+   <property name="holdTime" value="0" />
+   <property name="interleaveBursts" value="false" />
+   <property name="isBigEndian" value="false" />
+   <property name="isFlash" value="false" />
+   <property name="isMemoryDevice" value="true" />
+   <property name="isNonVolatileStorage" value="false" />
+   <property name="linewrapBursts" value="false" />
+   <property name="maximumPendingReadTransactions" value="7" />
+   <property name="maximumPendingWriteTransactions" value="0" />
+   <property name="minimumUninterruptedRunLength" value="1" />
+   <property name="printableDevice" value="false" />
+   <property name="readLatency" value="0" />
+   <property name="readWaitStates" value="1" />
+   <property name="readWaitTime" value="1" />
+   <property name="registerIncomingSignals" value="false" />
+   <property name="registerOutgoingSignals" value="false" />
+   <property name="setupTime" value="0" />
+   <property name="timingUnits" value="Cycles" />
+   <property name="transparentBridge" value="false" />
+   <property name="wellBehavedWaitrequest" value="false" />
+   <property name="writeLatency" value="0" />
+   <property name="writeWaitStates" value="0" />
+   <property name="writeWaitTime" value="0" />
+   <port name="avalon_mms_address" direction="input" role="address" width="26" />
+   <port
+       name="avalon_mms_byteenable_n"
+       direction="input"
+       role="byteenable_n"
+       width="4" />
+   <port
+       name="avalon_mms_chipselect"
+       direction="input"
+       role="chipselect"
+       width="1" />
+   <port
+       name="avalon_mms_writedata"
+       direction="input"
+       role="writedata"
+       width="32" />
+   <port name="avalon_mms_read_n" direction="input" role="read_n" width="1" />
+   <port name="avalon_mms_write_n" direction="input" role="write_n" width="1" />
+   <port
+       name="avalon_mms_readdata"
+       direction="output"
+       role="readdata"
+       width="32" />
+   <port
+       name="avalon_mms_readdatavalid"
+       direction="output"
+       role="readdatavalid"
+       width="1" />
+   <port
+       name="avalon_mms_waitrequest"
+       direction="output"
+       role="waitrequest"
+       width="1" />
+  </interface>
+  <interface name="in_clk" kind="clock" start="0">
+   <property name="clockRate" value="50000000" />
+   <property name="externallyDriven" value="false" />
+   <property name="ptfSchematicName" value="" />
+   <port name="in_clk_clk" direction="input" role="clk" width="1" />
+  </interface>
+  <interface name="in_rst" kind="reset" start="0">
+   <property name="associatedClock" value="" />
+   <property name="synchronousEdges" value="NONE" />
+   <port name="in_rst_reset_n" direction="input" role="reset_n" width="1" />
+  </interface>
+  <interface name="port" kind="conduit" start="0">
+   <property name="associatedClock" value="" />
+   <property name="associatedReset" value="" />
+   <port name="port_addr" direction="output" role="addr" width="13" />
+   <port name="port_ba" direction="output" role="ba" width="2" />
+   <port name="port_cas_n" direction="output" role="cas_n" width="1" />
+   <port name="port_cke" direction="output" role="cke" width="1" />
+   <port name="port_cs_n" direction="output" role="cs_n" width="2" />
+   <port name="port_dq" direction="bidir" role="dq" width="32" />
+   <port name="port_dqm" direction="output" role="dqm" width="4" />
+   <port name="port_ras_n" direction="output" role="ras_n" width="1" />
+   <port name="port_we_n" direction="output" role="we_n" width="1" />
+  </interface>
+ </perimeter>
+ <entity
+   path=""
+   parameterizationKey="sdram:1.0:AUTO_DEVICE=EP4CE10F17C8,AUTO_DEVICE_FAMILY=Cyclone IV E,AUTO_DEVICE_SPEEDGRADE=8,AUTO_GENERATION_ID=1470039185,AUTO_IN_CLK_CLOCK_DOMAIN=-1,AUTO_IN_CLK_CLOCK_RATE=-1,AUTO_IN_CLK_RESET_DOMAIN=-1,AUTO_UNIQUE_ID=(clock_source:15.1:clockFrequency=50000000,clockFrequencyKnown=true,inputClockFrequency=0,resetSynchronousEdges=NONE)(altera_avalon_new_sdram_controller:15.1:TAC=5.5,TMRD=3,TRCD=20.0,TRFC=70.0,TRP=20.0,TWR=14.0,addressWidth=26,bankWidth=2,casLatency=3,clockRate=50000000,columnWidth=10,componentName=sdram_sdram_controller,dataWidth=32,generateSimulationModel=false,initNOPDelay=0.0,initRefreshCommands=2,masteredTristateBridgeSlave=0,model=single_Micron_MT48LC4M32B2_7_chip,numberOfBanks=4,numberOfChipSelects=2,pinsSharedViaTriState=false,powerUpDelay=100.0,refreshPeriod=15.625,registerDataIn=true,rowWidth=13,size=-268435456)(clock:15.1:)(reset:15.1:)"
+   instancePathKey="sdram"
+   kind="sdram"
+   version="1.0"
+   name="sdram">
+  <parameter name="AUTO_GENERATION_ID" value="1470039185" />
+  <parameter name="AUTO_DEVICE" value="EP4CE10F17C8" />
+  <parameter name="AUTO_IN_CLK_CLOCK_RATE" value="-1" />
+  <parameter name="AUTO_DEVICE_FAMILY" value="Cyclone IV E" />
+  <parameter name="AUTO_IN_CLK_RESET_DOMAIN" value="-1" />
+  <parameter name="AUTO_UNIQUE_ID" value="" />
+  <parameter name="AUTO_DEVICE_SPEEDGRADE" value="8" />
+  <parameter name="AUTO_IN_CLK_CLOCK_DOMAIN" value="-1" />
+  <generatedFiles>
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/sdram.v"
+       type="VERILOG" />
+  </generatedFiles>
+  <childGeneratedFiles>
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/sdram_sdram_controller.v"
+       type="VERILOG"
+       attributes="" />
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_controller.v"
+       type="VERILOG"
+       attributes="" />
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_synchronizer.v"
+       type="VERILOG"
+       attributes="" />
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_controller.sdc"
+       type="SDC"
+       attributes="" />
+  </childGeneratedFiles>
+  <sourceFiles>
+   <file path="X:/ADCs/FPGA/SDRAMCtrl/src/core/sdram.qsys" />
+  </sourceFiles>
+  <childSourceFiles>
+   <file
+       path="C:/altera/15.1/ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/altera_avalon_new_sdram_controller_hw.tcl" />
+   <file
+       path="C:/altera/15.1/ip/altera/merlin/altera_reset_controller/altera_reset_controller_hw.tcl" />
+  </childSourceFiles>
+  <messages>
+   <message level="Debug" culprit="sdram">queue size: 0 starting:sdram "sdram"</message>
+   <message level="Progress" culprit="min"></message>
+   <message level="Progress" culprit="max"></message>
+   <message level="Progress" culprit="current"></message>
+   <message level="Debug">Transform: CustomInstructionTransform</message>
+   <message level="Debug">No custom instruction connections, skipping transform </message>
+   <message level="Debug" culprit="merlin_custom_instruction_transform"><![CDATA[After transform: <b>2</b> modules, <b>2</b> connections]]></message>
+   <message level="Debug">Transform: MMTransform</message>
+   <message level="Debug">Transform: InterruptMapperTransform</message>
+   <message level="Debug">Transform: InterruptSyncTransform</message>
+   <message level="Debug">Transform: InterruptFanoutTransform</message>
+   <message level="Debug">Transform: AvalonStreamingTransform</message>
+   <message level="Debug">Transform: ResetAdaptation</message>
+   <message level="Progress" culprit="min"></message>
+   <message level="Progress" culprit="max"></message>
+   <message level="Progress" culprit="current"></message>
+   <message level="Debug" culprit="reset_adaptation_transform"><![CDATA[After transform: <b>3</b> modules, <b>4</b> connections]]></message>
+   <message level="Debug" culprit="sdram"><![CDATA["<b>sdram</b>" reuses <b>altera_avalon_new_sdram_controller</b> "<b>submodules/sdram_sdram_controller</b>"]]></message>
+   <message level="Debug" culprit="sdram"><![CDATA["<b>sdram</b>" reuses <b>altera_reset_controller</b> "<b>submodules/altera_reset_controller</b>"]]></message>
+   <message level="Debug" culprit="sdram">queue size: 1 starting:altera_avalon_new_sdram_controller "submodules/sdram_sdram_controller"</message>
+   <message level="Info" culprit="sdram_controller">Starting RTL generation for module 'sdram_sdram_controller'</message>
+   <message level="Info" culprit="sdram_controller">  Generation command is [exec C:/altera/15.1/quartus/bin64/perl/bin/perl.exe -I C:/altera/15.1/quartus/bin64/perl/lib -I C:/altera/15.1/quartus/sopc_builder/bin/europa -I C:/altera/15.1/quartus/sopc_builder/bin/perl_lib -I C:/altera/15.1/quartus/sopc_builder/bin -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/common -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller -- C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/generate_rtl.pl --name=sdram_sdram_controller --dir=C:/Users/huxia/AppData/Local/Temp/alt7014_8665032027120985760.dir/0001_sdram_controller_gen/ --quartus_dir=C:/altera/15.1/quartus --verilog --config=C:/Users/huxia/AppData/Local/Temp/alt7014_8665032027120985760.dir/0001_sdram_controller_gen//sdram_sdram_controller_component_configuration.pl  --do_build_sim=0  ]</message>
+   <message level="Info" culprit="sdram_controller">Done RTL generation for module 'sdram_sdram_controller'</message>
+   <message level="Info" culprit="sdram_controller"><![CDATA["<b>sdram</b>" instantiated <b>altera_avalon_new_sdram_controller</b> "<b>sdram_controller</b>"]]></message>
+   <message level="Debug" culprit="sdram">queue size: 0 starting:altera_reset_controller "submodules/altera_reset_controller"</message>
+   <message level="Info" culprit="rst_controller"><![CDATA["<b>sdram</b>" instantiated <b>altera_reset_controller</b> "<b>rst_controller</b>"]]></message>
+  </messages>
+ </entity>
+ <entity
+   path="submodules/"
+   parameterizationKey="altera_avalon_new_sdram_controller:15.1:TAC=5.5,TMRD=3,TRCD=20.0,TRFC=70.0,TRP=20.0,TWR=14.0,addressWidth=26,bankWidth=2,casLatency=3,clockRate=50000000,columnWidth=10,componentName=sdram_sdram_controller,dataWidth=32,generateSimulationModel=false,initNOPDelay=0.0,initRefreshCommands=2,masteredTristateBridgeSlave=0,model=single_Micron_MT48LC4M32B2_7_chip,numberOfBanks=4,numberOfChipSelects=2,pinsSharedViaTriState=false,powerUpDelay=100.0,refreshPeriod=15.625,registerDataIn=true,rowWidth=13,size=-268435456"
+   instancePathKey="sdram:.:sdram_controller"
+   kind="altera_avalon_new_sdram_controller"
+   version="15.1"
+   name="sdram_sdram_controller">
+  <parameter name="registerDataIn" value="true" />
+  <parameter name="casLatency" value="3" />
+  <parameter name="refreshPeriod" value="15.625" />
+  <parameter name="masteredTristateBridgeSlave" value="0" />
+  <parameter name="TMRD" value="3" />
+  <parameter name="pinsSharedViaTriState" value="false" />
+  <parameter name="clockRate" value="50000000" />
+  <parameter name="TRP" value="20.0" />
+  <parameter name="numberOfChipSelects" value="2" />
+  <parameter name="columnWidth" value="10" />
+  <parameter name="componentName" value="sdram_sdram_controller" />
+  <parameter name="TRFC" value="70.0" />
+  <parameter name="generateSimulationModel" value="false" />
+  <parameter name="dataWidth" value="32" />
+  <parameter name="rowWidth" value="13" />
+  <parameter name="bankWidth" value="2" />
+  <parameter name="powerUpDelay" value="100.0" />
+  <parameter name="TWR" value="14.0" />
+  <parameter name="size" value="-268435456" />
+  <parameter name="TAC" value="5.5" />
+  <parameter name="initRefreshCommands" value="2" />
+  <parameter name="TRCD" value="20.0" />
+  <parameter name="initNOPDelay" value="0.0" />
+  <parameter name="addressWidth" value="26" />
+  <parameter name="numberOfBanks" value="4" />
+  <generatedFiles>
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/sdram_sdram_controller.v"
+       type="VERILOG"
+       attributes="" />
+  </generatedFiles>
+  <childGeneratedFiles/>
+  <sourceFiles>
+   <file
+       path="C:/altera/15.1/ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/altera_avalon_new_sdram_controller_hw.tcl" />
+  </sourceFiles>
+  <childSourceFiles/>
+  <instantiator instantiator="sdram" as="sdram_controller" />
+  <messages>
+   <message level="Debug" culprit="sdram">queue size: 1 starting:altera_avalon_new_sdram_controller "submodules/sdram_sdram_controller"</message>
+   <message level="Info" culprit="sdram_controller">Starting RTL generation for module 'sdram_sdram_controller'</message>
+   <message level="Info" culprit="sdram_controller">  Generation command is [exec C:/altera/15.1/quartus/bin64/perl/bin/perl.exe -I C:/altera/15.1/quartus/bin64/perl/lib -I C:/altera/15.1/quartus/sopc_builder/bin/europa -I C:/altera/15.1/quartus/sopc_builder/bin/perl_lib -I C:/altera/15.1/quartus/sopc_builder/bin -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/common -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller -- C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/generate_rtl.pl --name=sdram_sdram_controller --dir=C:/Users/huxia/AppData/Local/Temp/alt7014_8665032027120985760.dir/0001_sdram_controller_gen/ --quartus_dir=C:/altera/15.1/quartus --verilog --config=C:/Users/huxia/AppData/Local/Temp/alt7014_8665032027120985760.dir/0001_sdram_controller_gen//sdram_sdram_controller_component_configuration.pl  --do_build_sim=0  ]</message>
+   <message level="Info" culprit="sdram_controller">Done RTL generation for module 'sdram_sdram_controller'</message>
+   <message level="Info" culprit="sdram_controller"><![CDATA["<b>sdram</b>" instantiated <b>altera_avalon_new_sdram_controller</b> "<b>sdram_controller</b>"]]></message>
+  </messages>
+ </entity>
+ <entity
+   path="submodules/"
+   parameterizationKey="altera_reset_controller:15.1:ADAPT_RESET_REQUEST=0,MIN_RST_ASSERTION_TIME=3,NUM_RESET_INPUTS=1,OUTPUT_RESET_SYNC_EDGES=deassert,RESET_REQUEST_PRESENT=0,RESET_REQ_EARLY_DSRT_TIME=1,RESET_REQ_WAIT_TIME=1,SYNC_DEPTH=2,USE_RESET_REQUEST_IN0=0,USE_RESET_REQUEST_IN1=0,USE_RESET_REQUEST_IN10=0,USE_RESET_REQUEST_IN11=0,USE_RESET_REQUEST_IN12=0,USE_RESET_REQUEST_IN13=0,USE_RESET_REQUEST_IN14=0,USE_RESET_REQUEST_IN15=0,USE_RESET_REQUEST_IN2=0,USE_RESET_REQUEST_IN3=0,USE_RESET_REQUEST_IN4=0,USE_RESET_REQUEST_IN5=0,USE_RESET_REQUEST_IN6=0,USE_RESET_REQUEST_IN7=0,USE_RESET_REQUEST_IN8=0,USE_RESET_REQUEST_IN9=0,USE_RESET_REQUEST_INPUT=0"
+   instancePathKey="sdram:.:rst_controller"
+   kind="altera_reset_controller"
+   version="15.1"
+   name="altera_reset_controller">
+  <generatedFiles>
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_controller.v"
+       type="VERILOG"
+       attributes="" />
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_synchronizer.v"
+       type="VERILOG"
+       attributes="" />
+   <file
+       path="X:/ADCs/FPGA/SDRAMCtrl/src/core/synthesis/submodules/altera_reset_controller.sdc"
+       type="SDC"
+       attributes="" />
+  </generatedFiles>
+  <childGeneratedFiles/>
+  <sourceFiles>
+   <file
+       path="C:/altera/15.1/ip/altera/merlin/altera_reset_controller/altera_reset_controller_hw.tcl" />
+  </sourceFiles>
+  <childSourceFiles/>
+  <instantiator instantiator="sdram" as="rst_controller" />
+  <messages>
+   <message level="Debug" culprit="sdram">queue size: 0 starting:altera_reset_controller "submodules/altera_reset_controller"</message>
+   <message level="Info" culprit="rst_controller"><![CDATA["<b>sdram</b>" instantiated <b>altera_reset_controller</b> "<b>rst_controller</b>"]]></message>
+  </messages>
+ </entity>
+</deploy>

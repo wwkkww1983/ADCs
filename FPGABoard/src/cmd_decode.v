@@ -195,12 +195,13 @@ module cmd_decode
    reg  [`USB_ADDR_NBIT-1:0]     tx_buf_addr;  // low address of BUFFER
    reg  [`USB_ADDR_NBIT-1:0]     tx_cnt;
    reg                           ad_rd;
-   reg  [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
+//   reg  [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
    reg  [`AD_CNT_NBIT-1:0]       p_adc_cnt;
 
    assign tx_msg_sop = proc_handshake_start |
                        proc_acq_start;
    assign tx_addr    = {tx_buf_baddr,tx_buf_addr};
+   assign tx_baddr   = tx_buf_baddr;
    
    always@(posedge mclk) begin: tx_fsm
       tx_vd  <= `LOW;
@@ -248,7 +249,7 @@ module cmd_decode
             if(tx_msg_type==`MSG_TYPE_HANDSHAKE) begin // when handshake, gg
                tx_st   <= `ST_MSG_IDLE;
                tx_eop  <= `HIGH;
-               tx_baddr<= tx_buf_baddr;
+//               tx_baddr<= tx_buf_baddr;
             end
          end
          `ST_MSG_DATA: begin
@@ -283,7 +284,7 @@ module cmd_decode
                tx_vd   <= `LOW;
                tx_st   <= `ST_MSG_IDLE;
                tx_eop  <= `HIGH;
-               tx_baddr<= tx_buf_baddr;
+//               tx_baddr<= tx_buf_baddr;
             end
          end
          default:

@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////
 // 
 //  Revision: 1.0
-//   `define DEBUG               1'b1  // using simulate SYNC, SPCLK, AD_CLK, AD_DB
+   `define DEBUG               1'b1  // using simulate SYNC, SPCLK, AD_CLK, AD_DB
 //   `define AD_TIME             1'b1
    
    `define HIGH                1'b1
@@ -20,10 +20,10 @@
 
    ////////////////// SDRAM
    `define SDRAM_ADDR_NBIT     13
-   `define SDRAM_DATA_NBIT     16
-   `define SDRAM_DQM_NBIT      2
+   `define SDRAM_DATA_NBIT     32
+   `define SDRAM_DQM_NBIT      4
    `define SDRAM_BA_NBIT       2
-   `define SDRAM_NCS_NBIT      1
+   `define SDRAM_NCS_NBIT      2
    `define SDRAM_RA_NBIT       13 // row address width
    `define SDRAM_CA_NBIT       10 // column address width
                             
@@ -36,7 +36,7 @@
    `define USB_WR_FIFOADR      `USB_FIFOADR_NBIT'b10 // end point 6
    
    ////////////////// BUFFER
-   `define BUFFER_BADDR_NBIT   5 // 2^3 X 512bytes  
+   `define BUFFER_BADDR_NBIT   18
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    

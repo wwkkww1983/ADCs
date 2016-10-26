@@ -1,0 +1,210 @@
+/*
+WARNING: Do NOT edit the input and output ports in this file in a text
+editor if you plan to continue editing the block that represents it in
+the Block Editor! File corruption is VERY likely to occur.
+*/
+/*
+Copyright (C) 1991-2015 Altera Corporation. All rights reserved.
+Your use of Altera Corporation's design tools, logic functions 
+and other software and tools, and its AMPP partner logic 
+functions, and any output files from any of the foregoing 
+(including device programming or simulation files), and any 
+associated documentation or information are expressly subject 
+to the terms and conditions of the Altera Program License 
+Subscription Agreement, the Altera Quartus Prime License Agreement,
+the Altera MegaCore Function License Agreement, or other 
+applicable license agreement, including, without limitation, 
+that your use is for the sole purpose of programming logic 
+devices manufactured by Altera and sold by Altera or its 
+authorized distributors.  Please refer to the applicable 
+agreement for further details.
+*/
+(header "symbol" (version "1.1"))
+(symbol
+	(rect 0 0 432 480)
+	(text "sdram" (rect 198 -1 223 11)(font "Arial" (font_size 10)))
+	(text "inst" (rect 8 464 20 476)(font "Arial" ))
+	(port
+		(pt 0 72)
+		(input)
+		(text "avalon_mms_address[25..0]" (rect 0 0 115 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_address[25..0]" (rect 4 61 154 72)(font "Arial" (font_size 8)))
+		(line (pt 0 72)(pt 176 72)(line_width 3))
+	)
+	(port
+		(pt 0 88)
+		(input)
+		(text "avalon_mms_byteenable_n[3..0]" (rect 0 0 132 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_byteenable_n[3..0]" (rect 4 77 178 88)(font "Arial" (font_size 8)))
+		(line (pt 0 88)(pt 176 88)(line_width 3))
+	)
+	(port
+		(pt 0 104)
+		(input)
+		(text "avalon_mms_chipselect" (rect 0 0 96 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_chipselect" (rect 4 93 130 104)(font "Arial" (font_size 8)))
+		(line (pt 0 104)(pt 176 104)(line_width 1))
+	)
+	(port
+		(pt 0 120)
+		(input)
+		(text "avalon_mms_writedata[31..0]" (rect 0 0 116 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_writedata[31..0]" (rect 4 109 166 120)(font "Arial" (font_size 8)))
+		(line (pt 0 120)(pt 176 120)(line_width 3))
+	)
+	(port
+		(pt 0 136)
+		(input)
+		(text "avalon_mms_read_n" (rect 0 0 87 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_read_n" (rect 4 125 106 136)(font "Arial" (font_size 8)))
+		(line (pt 0 136)(pt 176 136)(line_width 1))
+	)
+	(port
+		(pt 0 152)
+		(input)
+		(text "avalon_mms_write_n" (rect 0 0 87 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_write_n" (rect 4 141 112 152)(font "Arial" (font_size 8)))
+		(line (pt 0 152)(pt 176 152)(line_width 1))
+	)
+	(port
+		(pt 0 240)
+		(input)
+		(text "in_clk_clk" (rect 0 0 38 12)(font "Arial" (font_size 8)))
+		(text "in_clk_clk" (rect 4 229 64 240)(font "Arial" (font_size 8)))
+		(line (pt 0 240)(pt 176 240)(line_width 1))
+	)
+	(port
+		(pt 0 280)
+		(input)
+		(text "in_rst_reset_n" (rect 0 0 59 12)(font "Arial" (font_size 8)))
+		(text "in_rst_reset_n" (rect 4 269 88 280)(font "Arial" (font_size 8)))
+		(line (pt 0 280)(pt 176 280)(line_width 1))
+	)
+	(port
+		(pt 0 168)
+		(output)
+		(text "avalon_mms_readdata[31..0]" (rect 0 0 116 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_readdata[31..0]" (rect 4 157 160 168)(font "Arial" (font_size 8)))
+		(line (pt 0 168)(pt 176 168)(line_width 3))
+	)
+	(port
+		(pt 0 184)
+		(output)
+		(text "avalon_mms_readdatavalid" (rect 0 0 110 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_readdatavalid" (rect 4 173 148 184)(font "Arial" (font_size 8)))
+		(line (pt 0 184)(pt 176 184)(line_width 1))
+	)
+	(port
+		(pt 0 200)
+		(output)
+		(text "avalon_mms_waitrequest" (rect 0 0 102 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_waitrequest" (rect 4 189 136 200)(font "Arial" (font_size 8)))
+		(line (pt 0 200)(pt 176 200)(line_width 1))
+	)
+	(port
+		(pt 0 320)
+		(output)
+		(text "port_addr[12..0]" (rect 0 0 62 12)(font "Arial" (font_size 8)))
+		(text "port_addr[12..0]" (rect 4 309 100 320)(font "Arial" (font_size 8)))
+		(line (pt 0 320)(pt 176 320)(line_width 3))
+	)
+	(port
+		(pt 0 336)
+		(output)
+		(text "port_ba[1..0]" (rect 0 0 49 12)(font "Arial" (font_size 8)))
+		(text "port_ba[1..0]" (rect 4 325 82 336)(font "Arial" (font_size 8)))
+		(line (pt 0 336)(pt 176 336)(line_width 3))
+	)
+	(port
+		(pt 0 352)
+		(output)
+		(text "port_cas_n" (rect 0 0 46 12)(font "Arial" (font_size 8)))
+		(text "port_cas_n" (rect 4 341 64 352)(font "Arial" (font_size 8)))
+		(line (pt 0 352)(pt 176 352)(line_width 1))
+	)
+	(port
+		(pt 0 368)
+		(output)
+		(text "port_cke" (rect 0 0 35 12)(font "Arial" (font_size 8)))
+		(text "port_cke" (rect 4 357 52 368)(font "Arial" (font_size 8)))
+		(line (pt 0 368)(pt 176 368)(line_width 1))
+	)
+	(port
+		(pt 0 384)
+		(output)
+		(text "port_cs_n[1..0]" (rect 0 0 60 12)(font "Arial" (font_size 8)))
+		(text "port_cs_n[1..0]" (rect 4 373 94 384)(font "Arial" (font_size 8)))
+		(line (pt 0 384)(pt 176 384)(line_width 3))
+	)
+	(port
+		(pt 0 416)
+		(output)
+		(text "port_dqm[3..0]" (rect 0 0 59 12)(font "Arial" (font_size 8)))
+		(text "port_dqm[3..0]" (rect 4 405 88 416)(font "Arial" (font_size 8)))
+		(line (pt 0 416)(pt 176 416)(line_width 3))
+	)
+	(port
+		(pt 0 432)
+		(output)
+		(text "port_ras_n" (rect 0 0 44 12)(font "Arial" (font_size 8)))
+		(text "port_ras_n" (rect 4 421 64 432)(font "Arial" (font_size 8)))
+		(line (pt 0 432)(pt 176 432)(line_width 1))
+	)
+	(port
+		(pt 0 448)
+		(output)
+		(text "port_we_n" (rect 0 0 42 12)(font "Arial" (font_size 8)))
+		(text "port_we_n" (rect 4 437 58 448)(font "Arial" (font_size 8)))
+		(line (pt 0 448)(pt 176 448)(line_width 1))
+	)
+	(port
+		(pt 0 400)
+		(bidir)
+		(text "port_dq[31..0]" (rect 0 0 54 12)(font "Arial" (font_size 8)))
+		(text "port_dq[31..0]" (rect 4 389 88 400)(font "Arial" (font_size 8)))
+		(line (pt 0 400)(pt 176 400)(line_width 3))
+	)
+	(drawing
+		(text "avalon_mms" (rect 103 43 266 99)(font "Arial" (color 128 0 0)(font_size 9)))
+		(text "address" (rect 181 67 404 144)(font "Arial" (color 0 0 0)))
+		(text "byteenable_n" (rect 181 83 434 176)(font "Arial" (color 0 0 0)))
+		(text "chipselect" (rect 181 99 422 208)(font "Arial" (color 0 0 0)))
+		(text "writedata" (rect 181 115 416 240)(font "Arial" (color 0 0 0)))
+		(text "read_n" (rect 181 131 398 272)(font "Arial" (color 0 0 0)))
+		(text "write_n" (rect 181 147 404 304)(font "Arial" (color 0 0 0)))
+		(text "readdata" (rect 181 163 410 336)(font "Arial" (color 0 0 0)))
+		(text "readdatavalid" (rect 181 179 440 368)(font "Arial" (color 0 0 0)))
+		(text "waitrequest" (rect 181 195 428 400)(font "Arial" (color 0 0 0)))
+		(text "in_clk" (rect 143 211 322 435)(font "Arial" (color 128 0 0)(font_size 9)))
+		(text "clk" (rect 181 235 380 480)(font "Arial" (color 0 0 0)))
+		(text "in_rst" (rect 143 251 322 515)(font "Arial" (color 128 0 0)(font_size 9)))
+		(text "reset_n" (rect 181 275 404 560)(font "Arial" (color 0 0 0)))
+		(text "port" (rect 154 291 332 595)(font "Arial" (color 128 0 0)(font_size 9)))
+		(text "addr" (rect 181 315 386 640)(font "Arial" (color 0 0 0)))
+		(text "ba" (rect 181 331 374 672)(font "Arial" (color 0 0 0)))
+		(text "cas_n" (rect 181 347 392 704)(font "Arial" (color 0 0 0)))
+		(text "cke" (rect 181 363 380 736)(font "Arial" (color 0 0 0)))
+		(text "cs_n" (rect 181 379 386 768)(font "Arial" (color 0 0 0)))
+		(text "dq" (rect 181 395 374 800)(font "Arial" (color 0 0 0)))
+		(text "dqm" (rect 181 411 380 832)(font "Arial" (color 0 0 0)))
+		(text "ras_n" (rect 181 427 392 864)(font "Arial" (color 0 0 0)))
+		(text "we_n" (rect 181 443 386 896)(font "Arial" (color 0 0 0)))
+		(text " system " (rect 397 464 842 938)(font "Arial" ))
+		(line (pt 176 32)(pt 256 32)(line_width 1))
+		(line (pt 256 32)(pt 256 464)(line_width 1))
+		(line (pt 176 464)(pt 256 464)(line_width 1))
+		(line (pt 176 32)(pt 176 464)(line_width 1))
+		(line (pt 177 52)(pt 177 204)(line_width 1))
+		(line (pt 178 52)(pt 178 204)(line_width 1))
+		(line (pt 177 220)(pt 177 244)(line_width 1))
+		(line (pt 178 220)(pt 178 244)(line_width 1))
+		(line (pt 177 260)(pt 177 284)(line_width 1))
+		(line (pt 178 260)(pt 178 284)(line_width 1))
+		(line (pt 177 300)(pt 177 452)(line_width 1))
+		(line (pt 178 300)(pt 178 452)(line_width 1))
+		(line (pt 0 0)(pt 432 0)(line_width 1))
+		(line (pt 432 0)(pt 432 480)(line_width 1))
+		(line (pt 0 480)(pt 432 480)(line_width 1))
+		(line (pt 0 0)(pt 0 480)(line_width 1))
+	)
+)
