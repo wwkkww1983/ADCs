@@ -80,7 +80,6 @@ module sdram_ctrl
    wire  [P_ADDR_NBIT+P_DATA_NBIT-1:0]  wr_buf_q;     
    
    assign wr_buf_rd = ~wr_buf_empty&(sdram_initdone&prev_initdone);
-   assign wstatus = wr_buf_empty;
    
    asyn_fifo #(P_DATA_NBIT+P_ADDR_NBIT,8,1)
    write_buffer (
@@ -102,7 +101,6 @@ module sdram_ctrl
    wire  [P_ADDR_NBIT-1:0]  rd_buf_q;     
    
    assign rd_buf_rd = ~rd_buf_empty&(sdram_initdone&prev_initdone);
-   assign rstatus = rd_buf_empty;
    
    asyn_fifo #(P_ADDR_NBIT,8,1)
    read_buffer (
@@ -129,7 +127,12 @@ module sdram_ctrl
    wire                      sdram_datavalid;
    reg                       sdram_write_en;
    reg                       prev_initdone;
-   reg  [P_ADDR_NBIT-1:0]    prev_raddr;
+   reg                       wstatus;
+   reg  [P_ADDR_NBIT-1:0]    prev_waddr;
+   reg  [P_ADDR_NBIT-1:0]    current_waddr;
+   reg                       rstatus;
+   reg  [P_ADDR_NBIT-1:0]    prev_raddr;                 
+   reg  [P_ADDR_NBIT-1:0]    current_raddr;
    
    assign sdram_address = sdram_read ? rd_buf_q : wr_buf_q[P_ADDR_NBIT+P_DATA_NBIT-1:P_DATA_NBIT];
    assign sdram_read    = sdram_read_en &sdram_initdone;
@@ -139,18 +142,50 @@ module sdram_ctrl
    assign rdata = sdram_rdata;
    assign rdv   = sdram_datavalid;
 
-   always@(posedge clk) begin
-      prev_initdone <= sdram_initdone;
-      // write control
-      if(wr_buf_rd)
-         sdram_write_en <= `HIGH;
-      else if(sdram_write)
+   always@(posedge clk or negedge rst_n) begin
+      if(~rst_n) begin
          sdram_write_en <= `LOW;
-      // read control   
-      if(rd_buf_rd)
-         sdram_read_en <= `HIGH;
-      else if(sdram_read)
+         current_waddr <= 0;
+         prev_waddr <= 0;
+         wstatus <= `LOW;
          sdram_read_en <= `LOW;
+         current_raddr <= 0;
+         prev_raddr <= 0;
+         rstatus <= `LOW;
+      end
+      else begin
+         prev_initdone <= sdram_initdone;
+         
+         // write enable
+         if(wr_buf_rd)
+            sdram_write_en <= `HIGH;
+         else if(sdram_write)
+            sdram_write_en <= `LOW;
+         // write status
+         if(sdram_write)
+            current_waddr <= current_waddr + 1'b1;
+         if(wren)
+            prev_waddr <= prev_waddr + 1'b1;
+         if(wr_buf_empty&&(prev_waddr==current_waddr))
+            wstatus <= `HIGH;
+         else
+            wstatus <= `LOW;
+            
+         // read enable   
+         if(rd_buf_rd)
+            sdram_read_en <= `HIGH;
+         else if(sdram_read)
+            sdram_read_en <= `LOW;
+         // read status
+         if(sdram_read)
+            current_raddr <= current_raddr + 1'b1;
+         if(sdram_datavalid)
+            prev_raddr <= prev_raddr + 1'b1;
+         if(rd_buf_empty&&(prev_raddr==current_raddr))
+            rstatus <= `HIGH;
+         else
+            rstatus <= `LOW;
+      end
    end
    
    ////////////////// Avalon to Local Bus

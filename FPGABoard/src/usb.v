@@ -38,6 +38,7 @@ module usb_slavefifo
    rx_cache_eop,
    
    tx_cache_sop,
+   tx_cache_eop,
    tx_cache_addr,
    tx_cache_data
 );
@@ -65,6 +66,7 @@ module usb_slavefifo
    input                          tx_cache_sop;
    output [`USB_ADDR_NBIT-1:0]    tx_cache_addr;
    input  [`USB_DATA_NBIT-1:0]    tx_cache_data;
+   output                         tx_cache_eop;
 
    ////////////////// ARCH ////////////////////
    
@@ -98,6 +100,7 @@ module usb_slavefifo
    reg                      slwr;
    reg [`USB_DATA_NBIT-1:0] wdata;
    reg [2:0]                p_tx_cache_sop;
+   reg                      tx_cache_eop=`HIGH;
       
    always@(posedge ifclk) begin
       p_in_proc      <= tx_in_proc;
@@ -107,8 +110,10 @@ module usb_slavefifo
          `ST_IDLE: begin
             tx_delay_cnt <= 0;
             tx_cache_addr <= 0;
-            if(~f_full&&(p_tx_cache_sop[2:1]==2'b01))
+            if(~f_full&&(p_tx_cache_sop[2:1]==2'b01)) begin
                tx_st <= `ST_T0;
+               tx_cache_eop   <= `LOW;
+            end
          end
          `ST_T0: begin // Check if TX FIFO is FULL
             if(~f_full) begin
@@ -131,6 +136,7 @@ module usb_slavefifo
             tx_cache_addr <= tx_cache_addr + 1'b1;
             if(tx_cache_addr=={`USB_ADDR_NBIT{1'b1}}) begin
                tx_st <= `ST_IDLE;
+               tx_cache_eop <= `HIGH;
             end
          end
          default:

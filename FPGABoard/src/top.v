@@ -238,6 +238,7 @@ module top
    wire                          usb_rx_cache_eop ;
    // Send Data to USB PHY       
    wire [`USB_ADDR_NBIT-1:0]     usb_tx_cache_addr;
+   wire                          usb_tx_cache_eop ;
    
    usb_slavefifo u_usb_slavefifo
    (
@@ -257,6 +258,7 @@ module top
       .rx_cache_sop (usb_rx_cache_sop ),
       .rx_cache_eop (usb_rx_cache_eop ),
       .tx_cache_sop (usb_tx_cache_sop ),
+      .tx_cache_eop (usb_tx_cache_eop ),
       .tx_cache_addr(usb_tx_cache_addr),
       .tx_cache_data(tx_buffer_rdata  )
    );
@@ -298,7 +300,7 @@ module top
    wire [`BUFFER_DATA_NBIT-1:0] sdram_wdata;
    wire                         sdram_wstatus;
    
-   assign sdram_wren  = cmdec_tx_vd&(cmdec_tx_addr!=0); 
+   assign sdram_wren  = cmdec_tx_vd&(cmdex_tx_baddr!=0); 
    assign sdram_waddr = cmdec_tx_addr;
    assign sdram_wdata = cmdec_tx_data;
    
@@ -353,8 +355,8 @@ module top
    tx_buffer (
       .a_inclk     (mclk           ),
       .a_in_wren   (tx_buffer_wr   ),
-      .a_in_address(tx_buffer_addr ),
-      .a_in_wrdata (tx_buffer_data ),
+      .a_in_address(tx_buffer_waddr),
+      .a_in_wrdata (tx_buffer_wdata),
       .a_out_rddata(),
       .b_inclk     (usb_clk        ),
       .b_in_wren   (`LOW           ),
@@ -377,55 +379,81 @@ module top
    reg  [1:0]  st;
    reg         prev_sdram_wstatus;
    reg         prev_sdram_rstatus;
-   
+   reg  [2:0]  prev_usb_tx_cache_eop;
+    
    always@(posedge mclk) begin
       prev_sdram_wstatus <= sdram_wstatus;
       prev_sdram_rstatus <= sdram_rstatus;
-      usb_tx_cache_sop <= `LOW;
       sdram_rd <= `LOW;
-      case(st) 
+      tx_buffer_waddr[`USB_ADDR_NBIT] <= `HIGH; 
+      prev_usb_tx_cache_eop <= {prev_usb_tx_cache_eop[1:0],usb_tx_cache_eop};
+      if(~cmdex_ad_acq_en)
+         sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] <= 0;
+      case(st)
          `ST_IDLE: begin
-            sdram_raddr <= {`BUFFER_BADDR_NBIT'd0,{`USB_ADDR_NBIT{1'b1}}};
+            sdram_raddr[`USB_ADDR_NBIT-1:0] <= {`USB_ADDR_NBIT{1'b1}};
+            tx_buffer_waddr[`USB_ADDR_NBIT-1:0] <= 0;
+            usb_tx_cache_sop <= `LOW;
             if(cmdec_tx_vd)
                st <= `ST_CMD;
          end
-         `ST_CMD: begin // DATA: CMD DEC --> SDRAM
+         `ST_CMD: begin // DATA: CMD DEC --> SDRAM(WRITE)
+            usb_tx_cache_sop <= `LOW;
             if(cmdex_tx_baddr!=0) begin
                if(sdram_wstatus&~prev_sdram_wstatus) begin
-                  st <= `ST_SDRAM;
-                  sdram_rd    <= `HIGH;
-                  sdram_raddr <= sdram_raddr + 1'b1;
+                  if(usb_ctrl_full) // when USB PHY FIFO is full, wait for next cycle
+                     st <= `ST_IDLE;
+                  else begin
+                     st <= `ST_SDRAM;
+                     sdram_rd    <= `HIGH;
+                     sdram_raddr <= sdram_raddr + 1'b1;
+                  end
                end
                usb_tx_cache_baddr <= `HIGH;
             end
             else begin
                st <= `ST_TXBUF;
+               usb_tx_cache_sop <= `HIGH;
                usb_tx_cache_baddr <= `LOW;
             end
          end
-         `ST_SDRAM: begin // DATA: SDRAM --> TX BUFFER
+         `ST_SDRAM: begin // DATA: SDRAM(READ) --> TX BUFFER
             // read data from sdram
             if(sdram_raddr[`USB_ADDR_NBIT-1:0]!={`USB_ADDR_NBIT{1'b1}}) begin
                sdram_rd    <= `HIGH;
                sdram_raddr <= sdram_raddr + 1'b1;
             end
             
-            if(sdram_rdv)
-               tx_buffer_waddr <= tx_buffer_waddr + 1'b1;
-               
-            if(sdram_rstatus&~prev_sdram_rstatus) begin
-               st <= `ST_TXBUF;
+            usb_tx_cache_sop <= `LOW;
+            if(sdram_rdv) begin
+               tx_buffer_waddr[`USB_ADDR_NBIT-1:0] <= tx_buffer_waddr[`USB_ADDR_NBIT-1:0] + 1'b1;
+               if(tx_buffer_waddr[`USB_ADDR_NBIT-1:0]=={`USB_ADDR_NBIT{1'b1}}) begin
+                  if(~usb_ctrl_full) begin
+                     st <= `ST_TXBUF;
+                     usb_tx_cache_sop <= `HIGH;
+                  end
+                  else begin // when USB PHY FIFO is full, stop USB TX
+                     st <= `ST_IDLE;
+                     sdram_raddr <= sdram_raddr - {1'b1,{`USB_ADDR_NBIT{1'b0}}}; // address back to previous BLOCK
+                  end
+               end
             end
          end
          `ST_TXBUF: begin // TX BUFFER --> USB CTRL
-            usb_tx_cache_sop <= `HIGH;
-            if(cmdex_tx_baddr!=0) begin
-               st <= `ST_SDRAM;
-               if(cmdex_tx_baddr==sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT])
-                  st <= `ST_IDLE;
+            if(prev_usb_tx_cache_eop[2:1]==2'b01) begin
+               if(cmdex_tx_baddr!=0) begin
+                  // when SDRAM WRITE or All data in SDRAM is read out, return to IDLE
+                  if(cmdec_tx_vd | (sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT]==cmdec_tx_addr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT]))
+                     st <= `ST_IDLE;
+                  else begin
+                     st          <= `ST_SDRAM;
+                     sdram_rd    <= `HIGH;
+                     sdram_raddr <= sdram_raddr + 1'b1;
+                  end
+               end
+               else
+                  st <= `ST_IDLE; // handshake command feedback
             end
-            else
-               st <= `ST_IDLE;
          end
          default:
             st <= `ST_IDLE;
