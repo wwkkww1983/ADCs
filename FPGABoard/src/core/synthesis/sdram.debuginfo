@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <EnsembleReport name="sdram" kind="system" version="15.1" fabric="QSYS">
  <!-- Format version 15.1 185 (Future versions may contain additional information.) -->
- <!-- 2016.08.01.16:13:07 -->
+ <!-- 2016.10.31.15:33:14 -->
  <!-- A collection of modules and connections -->
  <parameter name="clockCrossingAdapter">
   <type>com.altera.sopcmodel.ensemble.EClockAdapter</type>
@@ -53,7 +53,7 @@
  </parameter>
  <parameter name="generationId">
   <type>int</type>
-  <value>1470039185</value>
+  <value>1477899193</value>
   <derived>false</derived>
   <enabled>true</enabled>
   <visible>true</visible>
@@ -498,7 +498,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_ADDR_WIDTH</name>
-   <value>26</value>
+   <value>24</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_BANK_WIDTH</name>
@@ -506,7 +506,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_COL_WIDTH</name>
-   <value>10</value>
+   <value>9</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_DATA_WIDTH</name>
@@ -518,7 +518,7 @@ the requested settings for a module instance. -->
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_NUM_CHIPSELECTS</name>
-   <value>2</value>
+   <value>1</value>
   </assignment>
   <assignment>
    <name>embeddedsw.CMacro.SDRAM_ROW_WIDTH</name>
@@ -626,7 +626,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="columnWidth">
    <type>int</type>
-   <value>10</value>
+   <value>9</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -674,7 +674,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="numberOfChipSelects">
    <type>int</type>
-   <value>2</value>
+   <value>1</value>
    <derived>false</derived>
    <enabled>true</enabled>
    <visible>true</visible>
@@ -765,7 +765,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="size">
    <type>long</type>
-   <value>-268435456</value>
+   <value>67108864</value>
    <derived>true</derived>
    <enabled>true</enabled>
    <visible>false</visible>
@@ -773,7 +773,7 @@ the requested settings for a module instance. -->
   </parameter>
   <parameter name="addressWidth">
    <type>int</type>
-   <value>26</value>
+   <value>24</value>
    <derived>true</derived>
    <enabled>true</enabled>
    <visible>false</visible>
@@ -947,7 +947,7 @@ parameters are a RESULT of the module parameters. -->
    </parameter>
    <parameter name="addressSpan">
     <type>java.math.BigInteger</type>
-    <value>268435456</value>
+    <value>67108864</value>
     <derived>true</derived>
     <enabled>true</enabled>
     <visible>false</visible>
@@ -1246,7 +1246,7 @@ parameters are a RESULT of the module parameters. -->
    <port>
     <name>az_addr</name>
     <direction>Input</direction>
-    <width>26</width>
+    <width>24</width>
     <role>address</role>
    </port>
    <port>
@@ -1363,7 +1363,7 @@ parameters are a RESULT of the module parameters. -->
    <port>
     <name>zs_cs_n</name>
     <direction>Output</direction>
-    <width>2</width>
+    <width>1</width>
     <role>export</role>
    </port>
    <port>
@@ -1996,5 +1996,5 @@ parameters are a RESULT of the module parameters. -->
   <version>15.1</version>
  </plugin>
  <reportVersion>15.1 185</reportVersion>
- <uniqueIdentifier>000C29F9E66A000001564529DA10</uniqueIdentifier>
+ <uniqueIdentifier>000C29F9E66A0000015819A80CD7</uniqueIdentifier>
 </EnsembleReport>

@@ -1,6 +1,6 @@
 	component sdram is
 		port (
-			avalon_mms_address       : in    std_logic_vector(25 downto 0) := (others => 'X'); -- address
+			avalon_mms_address       : in    std_logic_vector(23 downto 0) := (others => 'X'); -- address
 			avalon_mms_byteenable_n  : in    std_logic_vector(3 downto 0)  := (others => 'X'); -- byteenable_n
 			avalon_mms_chipselect    : in    std_logic                     := 'X';             -- chipselect
 			avalon_mms_writedata     : in    std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
@@ -9,17 +9,17 @@
 			avalon_mms_readdata      : out   std_logic_vector(31 downto 0);                    -- readdata
 			avalon_mms_readdatavalid : out   std_logic;                                        -- readdatavalid
 			avalon_mms_waitrequest   : out   std_logic;                                        -- waitrequest
-			in_clk_clk               : in    std_logic                     := 'X';             -- clk
-			in_rst_reset_n           : in    std_logic                     := 'X';             -- reset_n
 			port_addr                : out   std_logic_vector(12 downto 0);                    -- addr
 			port_ba                  : out   std_logic_vector(1 downto 0);                     -- ba
 			port_cas_n               : out   std_logic;                                        -- cas_n
 			port_cke                 : out   std_logic;                                        -- cke
-			port_cs_n                : out   std_logic_vector(1 downto 0);                     -- cs_n
+			port_cs_n                : out   std_logic;                                        -- cs_n
 			port_dq                  : inout std_logic_vector(31 downto 0) := (others => 'X'); -- dq
 			port_dqm                 : out   std_logic_vector(3 downto 0);                     -- dqm
 			port_ras_n               : out   std_logic;                                        -- ras_n
-			port_we_n                : out   std_logic                                         -- we_n
+			port_we_n                : out   std_logic;                                        -- we_n
+			in_rst_reset_n           : in    std_logic                     := 'X';             -- reset_n
+			in_clk_clk               : in    std_logic                     := 'X'              -- clk
 		);
 	end component sdram;
 
@@ -34,8 +34,6 @@
 			avalon_mms_readdata      => CONNECTED_TO_avalon_mms_readdata,      --           .readdata
 			avalon_mms_readdatavalid => CONNECTED_TO_avalon_mms_readdatavalid, --           .readdatavalid
 			avalon_mms_waitrequest   => CONNECTED_TO_avalon_mms_waitrequest,   --           .waitrequest
-			in_clk_clk               => CONNECTED_TO_in_clk_clk,               --     in_clk.clk
-			in_rst_reset_n           => CONNECTED_TO_in_rst_reset_n,           --     in_rst.reset_n
 			port_addr                => CONNECTED_TO_port_addr,                --       port.addr
 			port_ba                  => CONNECTED_TO_port_ba,                  --           .ba
 			port_cas_n               => CONNECTED_TO_port_cas_n,               --           .cas_n
@@ -44,6 +42,8 @@
 			port_dq                  => CONNECTED_TO_port_dq,                  --           .dq
 			port_dqm                 => CONNECTED_TO_port_dqm,                 --           .dqm
 			port_ras_n               => CONNECTED_TO_port_ras_n,               --           .ras_n
-			port_we_n                => CONNECTED_TO_port_we_n                 --           .we_n
+			port_we_n                => CONNECTED_TO_port_we_n,                --           .we_n
+			in_rst_reset_n           => CONNECTED_TO_in_rst_reset_n,           --     in_rst.reset_n
+			in_clk_clk               => CONNECTED_TO_in_clk_clk                --     in_clk.clk
 		);
 

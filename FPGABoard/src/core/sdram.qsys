@@ -73,7 +73,7 @@
   <parameter name="TWR" value="14.0" />
   <parameter name="casLatency" value="3" />
   <parameter name="clockRate" value="50000000" />
-  <parameter name="columnWidth" value="10" />
+  <parameter name="columnWidth" value="9" />
   <parameter name="componentName">$${FILENAME}_sdram_controller</parameter>
   <parameter name="dataWidth" value="32" />
   <parameter name="generateSimulationModel" value="false" />
@@ -82,7 +82,7 @@
   <parameter name="masteredTristateBridgeSlave" value="0" />
   <parameter name="model">single_Micron_MT48LC4M32B2_7_chip</parameter>
   <parameter name="numberOfBanks" value="4" />
-  <parameter name="numberOfChipSelects" value="2" />
+  <parameter name="numberOfChipSelects" value="1" />
   <parameter name="pinsSharedViaTriState" value="false" />
   <parameter name="powerUpDelay" value="100.0" />
   <parameter name="refreshPeriod" value="15.625" />

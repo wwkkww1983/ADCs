@@ -4,7 +4,7 @@
 
 `timescale 1 ps / 1 ps
 module sdram (
-		input  wire [25:0] avalon_mms_address,       // avalon_mms.address
+		input  wire [23:0] avalon_mms_address,       // avalon_mms.address
 		input  wire [3:0]  avalon_mms_byteenable_n,  //           .byteenable_n
 		input  wire        avalon_mms_chipselect,    //           .chipselect
 		input  wire [31:0] avalon_mms_writedata,     //           .writedata
@@ -19,7 +19,7 @@ module sdram (
 		output wire [1:0]  port_ba,                  //           .ba
 		output wire        port_cas_n,               //           .cas_n
 		output wire        port_cke,                 //           .cke
-		output wire [1:0]  port_cs_n,                //           .cs_n
+		output wire        port_cs_n,                //           .cs_n
 		inout  wire [31:0] port_dq,                  //           .dq
 		output wire [3:0]  port_dqm,                 //           .dqm
 		output wire        port_ras_n,               //           .ras_n

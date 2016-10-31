@@ -197,6 +197,7 @@ module cmd_decode
    reg                           ad_rd;
    reg  [`BUFFER_BADDR_NBIT-1:0] tx_baddr;
    reg  [`AD_CNT_NBIT-1:0]       p_adc_cnt;
+   reg                           prev_acq_en;
 
    assign tx_msg_sop = proc_handshake_start |
                        proc_acq_start;
@@ -205,8 +206,6 @@ module cmd_decode
    always@(posedge mclk) begin: tx_fsm
       tx_vd  <= `LOW;
       ad_rd  <= `LOW;
-      if(~ad_acq_en)
-         tx_buf_baddr <= 0;
       case(tx_st) 
          `ST_MSG_IDLE: begin
             tx_buf_addr <= 0;
@@ -290,6 +289,10 @@ module cmd_decode
          default:
             tx_st <= `ST_MSG_IDLE;
       endcase
+      
+      prev_acq_en <= ad_acq_en;
+      if(ad_acq_en&~prev_acq_en)
+         tx_buf_baddr <= 0;
    end
    
 endmodule

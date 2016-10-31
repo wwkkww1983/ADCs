@@ -27,8 +27,8 @@ agreement for further details.
 	(port
 		(pt 0 72)
 		(input)
-		(text "avalon_mms_address[25..0]" (rect 0 0 115 12)(font "Arial" (font_size 8)))
-		(text "avalon_mms_address[25..0]" (rect 4 61 154 72)(font "Arial" (font_size 8)))
+		(text "avalon_mms_address[23..0]" (rect 0 0 115 12)(font "Arial" (font_size 8)))
+		(text "avalon_mms_address[23..0]" (rect 4 61 154 72)(font "Arial" (font_size 8)))
 		(line (pt 0 72)(pt 176 72)(line_width 3))
 	)
 	(port
@@ -132,9 +132,9 @@ agreement for further details.
 	(port
 		(pt 0 384)
 		(output)
-		(text "port_cs_n[1..0]" (rect 0 0 60 12)(font "Arial" (font_size 8)))
-		(text "port_cs_n[1..0]" (rect 4 373 94 384)(font "Arial" (font_size 8)))
-		(line (pt 0 384)(pt 176 384)(line_width 3))
+		(text "port_cs_n" (rect 0 0 41 12)(font "Arial" (font_size 8)))
+		(text "port_cs_n" (rect 4 373 58 384)(font "Arial" (font_size 8)))
+		(line (pt 0 384)(pt 176 384)(line_width 1))
 	)
 	(port
 		(pt 0 416)
@@ -189,7 +189,7 @@ agreement for further details.
 		(text "dqm" (rect 181 411 380 832)(font "Arial" (color 0 0 0)))
 		(text "ras_n" (rect 181 427 392 864)(font "Arial" (color 0 0 0)))
 		(text "we_n" (rect 181 443 386 896)(font "Arial" (color 0 0 0)))
-		(text " system " (rect 397 464 842 938)(font "Arial" ))
+		(text " sdram " (rect 402 464 846 938)(font "Arial" ))
 		(line (pt 176 32)(pt 256 32)(line_width 1))
 		(line (pt 256 32)(pt 256 464)(line_width 1))
 		(line (pt 176 464)(pt 256 464)(line_width 1))

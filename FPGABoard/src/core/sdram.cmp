@@ -1,6 +1,6 @@
 	component sdram is
 		port (
-			avalon_mms_address       : in    std_logic_vector(25 downto 0) := (others => 'X'); -- address
+			avalon_mms_address       : in    std_logic_vector(23 downto 0) := (others => 'X'); -- address
 			avalon_mms_byteenable_n  : in    std_logic_vector(3 downto 0)  := (others => 'X'); -- byteenable_n
 			avalon_mms_chipselect    : in    std_logic                     := 'X';             -- chipselect
 			avalon_mms_writedata     : in    std_logic_vector(31 downto 0) := (others => 'X'); -- writedata
@@ -15,7 +15,7 @@
 			port_ba                  : out   std_logic_vector(1 downto 0);                     -- ba
 			port_cas_n               : out   std_logic;                                        -- cas_n
 			port_cke                 : out   std_logic;                                        -- cke
-			port_cs_n                : out   std_logic_vector(1 downto 0);                     -- cs_n
+			port_cs_n                : out   std_logic;                                        -- cs_n
 			port_dq                  : inout std_logic_vector(31 downto 0) := (others => 'X'); -- dq
 			port_dqm                 : out   std_logic_vector(3 downto 0);                     -- dqm
 			port_ras_n               : out   std_logic;                                        -- ras_n

@@ -8,8 +8,6 @@
 		.avalon_mms_readdata      (<connected-to-avalon_mms_readdata>),      //           .readdata
 		.avalon_mms_readdatavalid (<connected-to-avalon_mms_readdatavalid>), //           .readdatavalid
 		.avalon_mms_waitrequest   (<connected-to-avalon_mms_waitrequest>),   //           .waitrequest
-		.in_clk_clk               (<connected-to-in_clk_clk>),               //     in_clk.clk
-		.in_rst_reset_n           (<connected-to-in_rst_reset_n>),           //     in_rst.reset_n
 		.port_addr                (<connected-to-port_addr>),                //       port.addr
 		.port_ba                  (<connected-to-port_ba>),                  //           .ba
 		.port_cas_n               (<connected-to-port_cas_n>),               //           .cas_n
@@ -18,6 +16,8 @@
 		.port_dq                  (<connected-to-port_dq>),                  //           .dq
 		.port_dqm                 (<connected-to-port_dqm>),                 //           .dqm
 		.port_ras_n               (<connected-to-port_ras_n>),               //           .ras_n
-		.port_we_n                (<connected-to-port_we_n>)                 //           .we_n
+		.port_we_n                (<connected-to-port_we_n>),                //           .we_n
+		.in_rst_reset_n           (<connected-to-in_rst_reset_n>),           //     in_rst.reset_n
+		.in_clk_clk               (<connected-to-in_clk_clk>)                //     in_clk.clk
 	);
 

@@ -1,5 +1,20 @@
+Info: Starting: Create block symbol file (.bsf)
+Info: qsys-generate X:\ADCs\FPGA\ADCSDRAM\FPGABoard\src\core\sdram.qsys --block-symbol-file --output-directory=X:\ADCs\FPGA\ADCSDRAM\FPGABoard\src\core --family="Cyclone IV E" --part=EP4CE10F17C8
+Progress: Loading core/sdram.qsys
+Progress: Reading input file
+Progress: Adding clk_0 [clock_source 15.1]
+Progress: Parameterizing module clk_0
+Progress: Adding sdram_controller [altera_avalon_new_sdram_controller 15.1]
+Progress: Parameterizing module sdram_controller
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+Info: qsys-generate succeeded.
+Info: Finished: Create block symbol file (.bsf)
+Info: 
 Info: Starting: Create HDL design files for synthesis
-Info: qsys-generate X:\ADCs\FPGA\SDRAMCtrl\src\core\sdram.qsys --synthesis=VERILOG --output-directory=X:\ADCs\FPGA\SDRAMCtrl\src\core\synthesis --family="Cyclone IV E" --part=EP4CE10F17C8
+Info: qsys-generate X:\ADCs\FPGA\ADCSDRAM\FPGABoard\src\core\sdram.qsys --synthesis=VERILOG --output-directory=X:\ADCs\FPGA\ADCSDRAM\FPGABoard\src\core\synthesis --family="Cyclone IV E" --part=EP4CE10F17C8
 Progress: Loading core/sdram.qsys
 Progress: Reading input file
 Progress: Adding clk_0 [clock_source 15.1]
@@ -12,7 +27,7 @@ Progress: Validating
 Progress: Done reading input file
 Info: sdram: Generating sdram "sdram" for QUARTUS_SYNTH
 Info: sdram_controller: Starting RTL generation for module 'sdram_sdram_controller'
-Info: sdram_controller:   Generation command is [exec C:/altera/15.1/quartus/bin64/perl/bin/perl.exe -I C:/altera/15.1/quartus/bin64/perl/lib -I C:/altera/15.1/quartus/sopc_builder/bin/europa -I C:/altera/15.1/quartus/sopc_builder/bin/perl_lib -I C:/altera/15.1/quartus/sopc_builder/bin -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/common -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller -- C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/generate_rtl.pl --name=sdram_sdram_controller --dir=C:/Users/huxia/AppData/Local/Temp/alt7004_7507459912432750055.dir/0001_sdram_controller_gen/ --quartus_dir=C:/altera/15.1/quartus --verilog --config=C:/Users/huxia/AppData/Local/Temp/alt7004_7507459912432750055.dir/0001_sdram_controller_gen//sdram_sdram_controller_component_configuration.pl  --do_build_sim=0  ]
+Info: sdram_controller:   Generation command is [exec C:/altera/15.1/quartus/bin64/perl/bin/perl.exe -I C:/altera/15.1/quartus/bin64/perl/lib -I C:/altera/15.1/quartus/sopc_builder/bin/europa -I C:/altera/15.1/quartus/sopc_builder/bin/perl_lib -I C:/altera/15.1/quartus/sopc_builder/bin -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/common -I C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller -- C:/altera/15.1/quartus/../ip/altera/sopc_builder_ip/altera_avalon_new_sdram_controller/generate_rtl.pl --name=sdram_sdram_controller --dir=C:/Users/huxia/AppData/Local/Temp/alt7105_2446500085632360902.dir/0001_sdram_controller_gen/ --quartus_dir=C:/altera/15.1/quartus --verilog --config=C:/Users/huxia/AppData/Local/Temp/alt7105_2446500085632360902.dir/0001_sdram_controller_gen//sdram_sdram_controller_component_configuration.pl  --do_build_sim=0  ]
 Info: sdram_controller: Done RTL generation for module 'sdram_sdram_controller'
 Info: sdram_controller: "sdram" instantiated altera_avalon_new_sdram_controller "sdram_controller"
 Info: rst_controller: "sdram" instantiated altera_reset_controller "rst_controller"

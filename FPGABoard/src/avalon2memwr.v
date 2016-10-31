@@ -45,7 +45,7 @@ module avalon2memwr
    parameter P_ADDR_NBIT = 16;
 
    ////////////////// PORT ////////////////////
-   output [25:0]               avalon_address;
+   output [23:0]               avalon_address;
    output [3:0]                avalon_byteenable_n;
    output                      avalon_chipselect;
    output [31:0]               avalon_writedata;
@@ -63,14 +63,13 @@ module avalon2memwr
    output                      inb_datavalid;
    output                      inb_initdone;
    
-   
    ////////////////// ARCH ////////////////////
    
-   assign avalon_address      = {{26-P_ADDR_NBIT{1'b0}},inb_address};
-   assign avalon_byteenable_n = 4'b0000;
+   assign avalon_address      = {{24-P_ADDR_NBIT{1'b0}},inb_address};
+   assign avalon_byteenable_n = {{4-P_DATA_NBIT/8{1'b1}},{P_DATA_NBIT/8{1'b0}}};
    assign avalon_chipselect   = inb_write|inb_read;  
    assign avalon_writedata    = {{32-P_DATA_NBIT{1'b0}},inb_wdata};
-   assign avalon_read_n       = ~inb_read;      
+   assign avalon_read_n       = ~inb_read;
    assign avalon_write_n      = ~inb_write;
    assign inb_rdata           = avalon_readdata[P_DATA_NBIT-1:0];
    assign inb_datavalid       = avalon_readdatavalid;

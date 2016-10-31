@@ -39,22 +39,22 @@ module sdram_sdram_controller_input_efifo_module (
   output           almost_full;
   output           empty;
   output           full;
-  output  [ 62: 0] rd_data;
+  output  [ 60: 0] rd_data;
   input            clk;
   input            rd;
   input            reset_n;
   input            wr;
-  input   [ 62: 0] wr_data;
+  input   [ 60: 0] wr_data;
 
   wire             almost_empty;
   wire             almost_full;
   wire             empty;
   reg     [  1: 0] entries;
-  reg     [ 62: 0] entry_0;
-  reg     [ 62: 0] entry_1;
+  reg     [ 60: 0] entry_0;
+  reg     [ 60: 0] entry_1;
   wire             full;
   reg              rd_address;
-  reg     [ 62: 0] rd_data;
+  reg     [ 60: 0] rd_data;
   wire    [  1: 0] rdwr;
   reg              wr_address;
   assign rdwr = {rd, wr};
@@ -189,12 +189,12 @@ module sdram_sdram_controller (
   output  [  1: 0] zs_ba;
   output           zs_cas_n;
   output           zs_cke;
-  output  [  1: 0] zs_cs_n;
+  output           zs_cs_n;
   inout   [ 31: 0] zs_dq;
   output  [  3: 0] zs_dqm;
   output           zs_ras_n;
   output           zs_we_n;
-  input   [ 25: 0] az_addr;
+  input   [ 23: 0] az_addr;
   input   [  3: 0] az_be_n;
   input            az_cs;
   input   [ 31: 0] az_data;
@@ -205,7 +205,7 @@ module sdram_sdram_controller (
 
   wire    [ 23: 0] CODE;
   reg              ack_refresh_request;
-  reg     [ 24: 0] active_addr;
+  reg     [ 23: 0] active_addr;
   wire    [  1: 0] active_bank;
   reg              active_cs_n;
   reg     [ 31: 0] active_data;
@@ -214,14 +214,14 @@ module sdram_sdram_controller (
   wire             almost_empty;
   wire             almost_full;
   wire             bank_match;
-  wire    [  9: 0] cas_addr;
+  wire    [  8: 0] cas_addr;
   wire             clk_en;
-  wire    [  4: 0] cmd_all;
+  wire    [  3: 0] cmd_all;
   wire    [  2: 0] cmd_code;
   wire             cs_n;
-  wire    [  1: 0] csn_decode;
+  wire             csn_decode;
   wire             csn_match;
-  wire    [ 24: 0] f_addr;
+  wire    [ 23: 0] f_addr;
   wire    [  1: 0] f_bank;
   wire             f_cs_n;
   wire    [ 31: 0] f_data;
@@ -230,9 +230,9 @@ module sdram_sdram_controller (
   reg              f_pop;
   wire             f_rnw;
   wire             f_select;
-  wire    [ 62: 0] fifo_read_data;
+  wire    [ 60: 0] fifo_read_data;
   reg     [ 12: 0] i_addr;
-  reg     [  4: 0] i_cmd;
+  reg     [  3: 0] i_cmd;
   reg     [  2: 0] i_count;
   reg     [  2: 0] i_next;
   reg     [  2: 0] i_refs;
@@ -240,7 +240,7 @@ module sdram_sdram_controller (
   reg              init_done;
   reg     [ 12: 0] m_addr /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON"  */;
   reg     [  1: 0] m_bank /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON"  */;
-  reg     [  4: 0] m_cmd /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON"  */;
+  reg     [  3: 0] m_cmd /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON"  */;
   reg     [  2: 0] m_count;
   reg     [ 31: 0] m_data /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON ; FAST_OUTPUT_ENABLE_REGISTER=ON"  */;
   reg     [  3: 0] m_dqm /* synthesis ALTERA_ATTRIBUTE = "FAST_OUTPUT_REGISTER=ON"  */;
@@ -263,7 +263,7 @@ module sdram_sdram_controller (
   wire    [  1: 0] zs_ba;
   wire             zs_cas_n;
   wire             zs_cke;
-  wire    [  1: 0] zs_cs_n;
+  wire             zs_cs_n;
   wire    [ 31: 0] zs_dq;
   wire    [  3: 0] zs_dqm;
   wire             zs_ras_n;
@@ -277,10 +277,10 @@ module sdram_sdram_controller (
   assign zs_dqm = m_dqm;
   assign zs_ba = m_bank;
   assign f_select = f_pop & pending;
-  assign {f_rnw, f_cs_n, f_addr, f_dqm, f_data} = fifo_read_data;
+  assign f_cs_n = 1'b0;
   assign cs_n = f_select ? f_cs_n : active_cs_n;
-  assign csn_decode[0] = cs_n != 1'h0;
-  assign csn_decode[1] = cs_n != 1'h1;
+  assign csn_decode = cs_n;
+  assign {f_rnw, f_addr, f_dqm, f_data} = fifo_read_data;
   sdram_sdram_controller_input_efifo_module the_sdram_sdram_controller_input_efifo_module
     (
       .almost_empty (almost_empty),
@@ -295,7 +295,7 @@ module sdram_sdram_controller (
       .wr_data      ({az_wr_n, az_addr, az_wr_n ? 4'b0 : az_be_n, az_data})
     );
 
-  assign f_bank = {f_addr[24],f_addr[10]};
+  assign f_bank = {f_addr[23],f_addr[9]};
   // Refresh/init counter.
   always @(posedge clk or negedge reset_n)
     begin
@@ -345,7 +345,7 @@ module sdram_sdram_controller (
         begin
           i_state <= 3'b000;
           i_next <= 3'b000;
-          i_cmd <= 5'b11111;
+          i_cmd <= 4'b1111;
           i_addr <= {13{1'b1}};
           i_count <= {3{1'b0}};
         end
@@ -355,7 +355,7 @@ module sdram_sdram_controller (
           case (i_state) // synthesis parallel_case full_case
           
               3'b000: begin
-                  i_cmd <= 5'b11111;
+                  i_cmd <= 4'b1111;
                   i_refs <= 3'b0;
                   //Wait for refresh count-down after reset
                   if (refresh_counter == 0)
@@ -364,13 +364,13 @@ module sdram_sdram_controller (
           
               3'b001: begin
                   i_state <= 3'b011;
-                  i_cmd <= {{2{1'b0}},3'h2};
+                  i_cmd <= {{1{1'b0}},3'h2};
                   i_count <= 0;
                   i_next <= 3'b010;
               end // 3'b001 
           
               3'b010: begin
-                  i_cmd <= {{2{1'b0}},3'h1};
+                  i_cmd <= {{1{1'b0}},3'h1};
                   i_refs <= i_refs + 1'b1;
                   i_state <= 3'b011;
                   i_count <= 3;
@@ -382,7 +382,7 @@ module sdram_sdram_controller (
               end // 3'b010 
           
               3'b011: begin
-                  i_cmd <= {{2{1'b0}},3'h7};
+                  i_cmd <= {{1{1'b0}},3'h7};
                   //WAIT til safe to Proceed...
                   if (i_count > 1)
                       i_count <= i_count - 1'b1;
@@ -396,7 +396,7 @@ module sdram_sdram_controller (
           
               3'b111: begin
                   i_state <= 3'b011;
-                  i_cmd <= {{2{1'b0}},3'h0};
+                  i_cmd <= {{1{1'b0}},3'h0};
                   i_addr <= {{3{1'b0}},1'b0,2'b00,3'h3,4'h0};
                   i_count <= 4;
                   i_next <= 3'b101;
@@ -411,13 +411,13 @@ module sdram_sdram_controller (
     end
 
 
-  assign active_bank = {active_addr[24],active_addr[10]};
+  assign active_bank = {active_addr[23],active_addr[9]};
   assign csn_match = active_cs_n == f_cs_n;
   assign rnw_match = active_rnw == f_rnw;
   assign bank_match = active_bank == f_bank;
-  assign row_match = {active_addr[23 : 11]} == {f_addr[23 : 11]};
+  assign row_match = {active_addr[22 : 10]} == {f_addr[22 : 10]};
   assign pending = csn_match && rnw_match && bank_match && row_match && !f_empty;
-  assign cas_addr = f_select ? { {3{1'b0}},f_addr[9 : 0] } : { {3{1'b0}},active_addr[9 : 0] };
+  assign cas_addr = f_select ? { {4{1'b0}},f_addr[8 : 0] } : { {4{1'b0}},active_addr[8 : 0] };
   // **** Main FSM ****
   always @(posedge clk or negedge reset_n)
     begin
@@ -425,7 +425,7 @@ module sdram_sdram_controller (
         begin
           m_state <= 9'b000000001;
           m_next <= 9'b000000001;
-          m_cmd <= 5'b11111;
+          m_cmd <= 4'b1111;
           m_bank <= 2'b00;
           m_addr <= 13'b0000000000000;
           m_data <= 32'b00000000000000000000000000000000;
@@ -447,9 +447,9 @@ module sdram_sdram_controller (
                     begin
                       //Hold bus if another cycle ended to arf.
                       if (refresh_request)
-                          m_cmd <= {{2{1'b0}},3'h7};
+                          m_cmd <= {{1{1'b0}},3'h7};
                       else 
-                        m_cmd <= 5'b11111;
+                        m_cmd <= 4'b1111;
                       ack_refresh_request <= 1'b0;
                       //Wait for a read/write request.
                       if (refresh_request)
@@ -457,7 +457,7 @@ module sdram_sdram_controller (
                           m_state <= 9'b001000000;
                           m_next <= 9'b010000000;
                           m_count <= 0;
-                          active_cs_n <= {1{1'b1}};
+                          active_cs_n <= 1'b1;
                         end
                       else if (!f_empty)
                         begin
@@ -483,7 +483,7 @@ module sdram_sdram_controller (
                   m_state <= 9'b000000100;
                   m_cmd <= {csn_decode,3'h3};
                   m_bank <= active_bank;
-                  m_addr <= active_addr[23 : 11];
+                  m_addr <= active_addr[22 : 10];
                   m_data <= active_data;
                   m_dqm <= active_dqm;
                   m_count <= 1;
@@ -493,7 +493,7 @@ module sdram_sdram_controller (
               9'b000000100: begin
                   // precharge all if arf, else precharge csn_decode
                   if (m_next == 9'b010000000)
-                      m_cmd <= {{2{1'b0}},3'h7};
+                      m_cmd <= {{1{1'b0}},3'h7};
                   else 
                     m_cmd <= {csn_decode,3'h7};
                   //Count down til safe to Proceed...
@@ -593,7 +593,7 @@ module sdram_sdram_controller (
                   m_addr <= {13{1'b1}};
                   // precharge all if arf, else precharge csn_decode
                   if (refresh_request)
-                      m_cmd <= {{2{1'b0}},3'h2};
+                      m_cmd <= {{1{1'b0}},3'h2};
                   else 
                     m_cmd <= {csn_decode,3'h2};
               end // 9'b001000000 
@@ -601,7 +601,7 @@ module sdram_sdram_controller (
               9'b010000000: begin
                   ack_refresh_request <= 1'b1;
                   m_state <= 9'b000000100;
-                  m_cmd <= {{2{1'b0}},3'h1};
+                  m_cmd <= {{1{1'b0}},3'h1};
                   m_count <= 3;
                   m_next <= 9'b000000001;
               end // 9'b010000000 
@@ -640,7 +640,7 @@ module sdram_sdram_controller (
           
               default: begin
                   m_state <= m_state;
-                  m_cmd <= 5'b11111;
+                  m_cmd <= 4'b1111;
                   f_pop <= 1'b0;
                   oe <= 1'b0;
               end // default
@@ -710,7 +710,7 @@ initial
     (cmd_code == 3'h7)? 24'h4e4f50 :
     24'h424144;
 
-  assign CODE = &(cmd_all|5'h7) ? 24'h494e48 : txt_code;
+  assign CODE = &(cmd_all|4'h7) ? 24'h494e48 : txt_code;
 
 //////////////// END SIMULATION-ONLY CONTENTS
 

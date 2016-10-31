@@ -36,7 +36,7 @@
    `define USB_WR_FIFOADR      `USB_FIFOADR_NBIT'b10 // end point 6
    
    ////////////////// BUFFER
-   `define BUFFER_BADDR_NBIT   18
+   `define BUFFER_BADDR_NBIT   16
    `define BUFFER_ADDR_NBIT    `USB_ADDR_NBIT+`BUFFER_BADDR_NBIT
    `define BUFFER_DATA_NBIT    `USB_DATA_NBIT
    

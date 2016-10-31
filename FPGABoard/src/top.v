@@ -309,6 +309,13 @@ module top
    wire [`BUFFER_DATA_NBIT-1:0] sdram_rdata  ;
    wire                         sdram_rdv    ;
    wire                         sdram_rstatus;   
+   wire                         sdram_rst_n  ;
+   wire                         sdram_cs_n   ;
+   
+   assign SDRAM_NCS[0] = sdram_cs_n;
+   assign SDRAM_NCS[1] = sdram_cs_n;
+   
+   assign sdram_rst_n = `HIGH;
    
    sdram_ctrl #(`USB_DATA_NBIT,`BUFFER_ADDR_NBIT)
    sdram_ctrl_u(
@@ -327,7 +334,7 @@ module top
 		.port_ba   (SDRAM_BA      ),
 		.port_cas_n(SDRAM_NCAS    ),
 		.port_cke  (SDRAM_CKE     ),
-		.port_cs_n (SDRAM_NCS     ),
+		.port_cs_n (sdram_cs_n    ),
 		.port_dq   (SDRAM_D       ),
 		.port_dqm  (SDRAM_DQM     ),
 		.port_ras_n(SDRAM_NRAS    ),
@@ -371,40 +378,37 @@ module top
    //
    //////////////////
    
-   `define ST_IDLE   2'b00 
+   `define IDLE      2'b00 
    `define ST_CMD    2'b01
    `define ST_SDRAM  2'b11
    `define ST_TXBUF  2'b10
    
-   reg  [1:0]  st;
+   reg  [1:0]  df_st;
    reg         prev_sdram_wstatus;
-   reg         prev_sdram_rstatus;
    reg  [2:0]  prev_usb_tx_cache_eop;
+   reg  [2:0]  prev_acq_en;
     
    always@(posedge mclk) begin
       prev_sdram_wstatus <= sdram_wstatus;
-      prev_sdram_rstatus <= sdram_rstatus;
       sdram_rd <= `LOW;
       tx_buffer_waddr[`USB_ADDR_NBIT] <= `HIGH; 
       prev_usb_tx_cache_eop <= {prev_usb_tx_cache_eop[1:0],usb_tx_cache_eop};
-      if(~cmdex_ad_acq_en)
-         sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] <= 0;
-      case(st)
-         `ST_IDLE: begin
+      case(df_st)
+         `IDLE: begin
             sdram_raddr[`USB_ADDR_NBIT-1:0] <= {`USB_ADDR_NBIT{1'b1}};
             tx_buffer_waddr[`USB_ADDR_NBIT-1:0] <= 0;
             usb_tx_cache_sop <= `LOW;
             if(cmdec_tx_vd)
-               st <= `ST_CMD;
+               df_st <= `ST_CMD;
          end
          `ST_CMD: begin // DATA: CMD DEC --> SDRAM(WRITE)
             usb_tx_cache_sop <= `LOW;
             if(cmdex_tx_baddr!=0) begin
                if(sdram_wstatus&~prev_sdram_wstatus) begin
                   if(usb_ctrl_full) // when USB PHY FIFO is full, wait for next cycle
-                     st <= `ST_IDLE;
+                     df_st <= `IDLE;
                   else begin
-                     st <= `ST_SDRAM;
+                     df_st <= `ST_SDRAM;
                      sdram_rd    <= `HIGH;
                      sdram_raddr <= sdram_raddr + 1'b1;
                   end
@@ -412,52 +416,72 @@ module top
                usb_tx_cache_baddr <= `HIGH;
             end
             else begin
-               st <= `ST_TXBUF;
-               usb_tx_cache_sop <= `HIGH;
+               if(~usb_ctrl_full) begin
+                  df_st <= `ST_TXBUF;
+                  usb_tx_cache_sop <= `HIGH;
+               end
                usb_tx_cache_baddr <= `LOW;
             end
          end
          `ST_SDRAM: begin // DATA: SDRAM(READ) --> TX BUFFER
-            // read data from sdram
-            if(sdram_raddr[`USB_ADDR_NBIT-1:0]!={`USB_ADDR_NBIT{1'b1}}) begin
-               sdram_rd    <= `HIGH;
-               sdram_raddr <= sdram_raddr + 1'b1;
-            end
-            
-            usb_tx_cache_sop <= `LOW;
-            if(sdram_rdv) begin
-               tx_buffer_waddr[`USB_ADDR_NBIT-1:0] <= tx_buffer_waddr[`USB_ADDR_NBIT-1:0] + 1'b1;
-               if(tx_buffer_waddr[`USB_ADDR_NBIT-1:0]=={`USB_ADDR_NBIT{1'b1}}) begin
-                  if(~usb_ctrl_full) begin
-                     st <= `ST_TXBUF;
-                     usb_tx_cache_sop <= `HIGH;
-                  end
-                  else begin // when USB PHY FIFO is full, stop USB TX
-                     st <= `ST_IDLE;
-                     sdram_raddr <= sdram_raddr - {1'b1,{`USB_ADDR_NBIT{1'b0}}}; // address back to previous BLOCK
+            if(~usb_ctrl_full&sdram_wstatus) begin
+               // read data from sdram
+               if(sdram_raddr[`USB_ADDR_NBIT-1:0]!={`USB_ADDR_NBIT{1'b1}}) begin
+                  sdram_rd    <= `HIGH;
+                  sdram_raddr <= sdram_raddr + 1'b1;
+               end
+               
+               usb_tx_cache_sop <= `LOW;
+               if(sdram_rdv) begin
+                  tx_buffer_waddr[`USB_ADDR_NBIT-1:0] <= tx_buffer_waddr[`USB_ADDR_NBIT-1:0] + 1'b1;
+                  if(tx_buffer_waddr[`USB_ADDR_NBIT-1:0]=={`USB_ADDR_NBIT{1'b1}}) begin
+                     if(~usb_ctrl_full) begin
+                        df_st <= `ST_TXBUF;
+                        usb_tx_cache_sop <= `HIGH;
+                     end
+                     else begin // when USB PHY FIFO is full, stop USB TX
+                        df_st <= `IDLE;
+                        sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] <= sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] - 1'b1;
+                        sdram_raddr[`USB_ADDR_NBIT-1:0] <= {`USB_ADDR_NBIT{1'b1}};
+                     end
                   end
                end
+            end
+            else begin
+               df_st <= `IDLE;
+               sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] <= sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] - 1'b1;
+               sdram_raddr[`USB_ADDR_NBIT-1:0] <= {`USB_ADDR_NBIT{1'b1}};
             end
          end
          `ST_TXBUF: begin // TX BUFFER --> USB CTRL
             if(prev_usb_tx_cache_eop[2:1]==2'b01) begin
                if(cmdex_tx_baddr!=0) begin
                   // when SDRAM WRITE or All data in SDRAM is read out, return to IDLE
-                  if(cmdec_tx_vd | (sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT]==cmdec_tx_addr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT]))
-                     st <= `ST_IDLE;
+                  if(sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT]==cmdec_tx_addr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT])
+                     df_st <= `IDLE;
                   else begin
-                     st          <= `ST_SDRAM;
+                     df_st       <= `ST_SDRAM;
                      sdram_rd    <= `HIGH;
                      sdram_raddr <= sdram_raddr + 1'b1;
                   end
                end
                else
-                  st <= `ST_IDLE; // handshake command feedback
+                  df_st <= `IDLE; // handshake command feedback
+            end
+            else if(~sdram_wstatus) begin
+               df_st <= `IDLE; // SDRAM WRITE
             end
          end
-         default:
-            st <= `ST_IDLE;
+         default: begin
+            df_st <= `IDLE;
+         end
       endcase
+      
+      prev_acq_en <= {prev_acq_en[1:0],cmdex_ad_acq_en};
+      if(prev_acq_en[2:1]==2'b01)
+         sdram_raddr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT] <= cmdec_tx_addr[`BUFFER_ADDR_NBIT-1:`USB_ADDR_NBIT];
+      if(~cmdex_ad_acq_en&prev_acq_en[0])
+         df_st <= `IDLE;
    end
          
    ////////////////// SYNC OUT
